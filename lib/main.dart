@@ -38,6 +38,68 @@ const creatorProfiles = <CreatorProfile>[
   CreatorProfile('Ariana Grande', '@arianagrande'),
   CreatorProfile('Rihanna', '@badgalriri'),
   CreatorProfile('Jackie Chan', '@jackiechan'),
+  CreatorProfile('Dua Lipa', '@dualipa'),
+  CreatorProfile('Lisa', '@lalalalisa_m'),
+  CreatorProfile('LeBron James', '@kingjames'),
+  CreatorProfile('Simone Biles', '@simonebiles'),
+  CreatorProfile('Kylian Mbappe', '@k.mbappe'),
+  CreatorProfile('Deepika Padukone', '@deepikapadukone'),
+  CreatorProfile('Alia Bhatt', '@aliaabhatt'),
+  CreatorProfile('Emma Watson', '@emmawatson'),
+  CreatorProfile('Chris Hemsworth', '@chrishemsworth'),
+  CreatorProfile('Ryan Reynolds', '@vancityreynolds'),
+  CreatorProfile('Kim Kardashian', '@kimkardashian'),
+  CreatorProfile('Mark Zuckerberg', '@zuck'),
+  CreatorProfile('Oprah Winfrey', '@oprah'),
+  CreatorProfile('Bill Gates', '@thisisbillgates'),
+  CreatorProfile('Gordon Ramsay', '@gordongram'),
+  CreatorProfile('David Beckham', '@davidbeckham'),
+  CreatorProfile('Marques Brownlee', '@mkbhd'),
+  CreatorProfile('Lilly Singh', '@lilly'),
+  CreatorProfile('Huda Kattan', '@hudabeauty'),
+  CreatorProfile('PewDiePie', '@pewdiepie'),
+  CreatorProfile('Novak Djokovic', '@djokernole'),
+  CreatorProfile('Shakira', '@shakira'),
+  CreatorProfile('Ed Sheeran', '@teddysphotos'),
+  CreatorProfile('BTS', '@bts.bighitofficial'),
+];
+
+const feedCaptions = <String>[
+  'A little reminder to make room for the things that make you feel alive.',
+  'Studio days, late nights, and a melody that finally clicked.',
+  'The work is quiet. The results will speak.',
+  'A new personal best, and a lot more to chase.',
+  'Good food, good people, no plans to rush home.',
+  'Somewhere between the first take and the last laugh.',
+  'Small steps every day add up to something huge.',
+  'Sunrise looked different from up here today.',
+  'A little behind-the-scenes from this week.',
+  'Grateful for the team that makes the impossible look easy.',
+  'Found a new favorite corner of the city.',
+  'Practice, patience, and showing up again tomorrow.',
+  'Weekend reset: fresh air and a phone on silent.',
+  'Made this one for everyone who needed to hear it.',
+  'The best conversations happen around the dinner table.',
+  'A look back at a day I wish could last longer.',
+  'New project, same curiosity. More soon.',
+  'Taking the scenic route for once.',
+  'One more reason to keep dreaming bigger.',
+  'Thank you for being part of this journey.',
+];
+
+const feedLocations = <String>[
+  'Mumbai',
+  'New York',
+  'Seoul',
+  'London',
+  'Nairobi',
+  'Paris',
+  'Los Angeles',
+  'Tokyo',
+  'Lagos',
+  'Dubai',
+  'Sydney',
+  'Mexico City',
 ];
 
 class ShareChatCloneApp extends StatelessWidget {
@@ -174,7 +236,7 @@ class HomeScreen extends StatelessWidget {
           ),
           Expanded(
             child: ListView.builder(
-              itemCount: 5,
+              itemCount: creatorProfiles.length,
               itemBuilder: (context, index) {
                 return PostCard(index: index, language: language);
               },
@@ -330,7 +392,9 @@ class _PostCardState extends State<PostCard> {
                 if (isVerified) const Icon(Icons.verified, color: Colors.blue, size: 16),
               ],
             ),
-            subtitle: Text('${creator.username} • Mumbai • $_hoursAgo hours ago • ${widget.language}'),
+            subtitle: Text(
+              '${creator.username} • ${feedLocations[widget.index % feedLocations.length]} • $_hoursAgo hours ago • ${widget.language}',
+            ),
             trailing: IconButton(
               icon: const Icon(Icons.more_vert),
               onPressed: () {
@@ -353,7 +417,7 @@ class _PostCardState extends State<PostCard> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Text(
-              'आज मुंबईमध्ये खूप छान वातावरण आहे! (Showing in ${widget.language})',
+              feedCaptions[widget.index % feedCaptions.length],
               style: const TextStyle(fontSize: 16),
             ),
           ),
