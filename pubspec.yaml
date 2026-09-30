@@ -60,7 +60,40 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/media/
+    - assets/media/creator_placeholder.svg
+    - assets/media/cristiano/1.jpg
+    - assets/media/cristiano/2.jpg
+    - assets/media/cristiano/3.jpg
+    - assets/media/iamsrk/1.jpg
+    - assets/media/iamsrk/2.jpg
+    - assets/media/iamsrk/3.jpg
+    - assets/media/leomessi/1.jpg
+    - assets/media/leomessi/2.jpg
+    - assets/media/leomessi/3.jpg
+    - assets/media/mrbeast/1.jpg
+    - assets/media/mrbeast/2.jpg
+    - assets/media/mrbeast/3.jpg
+    - assets/media/priyankachopra/1.jpg
+    - assets/media/priyankachopra/2.jpg
+    - assets/media/priyankachopra/3.jpg
+    - assets/media/selenagomez/1.jpg
+    - assets/media/selenagomez/2.jpg
+    - assets/media/selenagomez/3.jpg
+    - assets/media/serenawilliams/1.jpg
+    - assets/media/serenawilliams/2.jpg
+    - assets/media/serenawilliams/3.jpg
+    - assets/media/taylorswift/1.jpg
+    - assets/media/taylorswift/2.jpg
+    - assets/media/taylorswift/3.jpg
+    - assets/media/therock/1.jpg
+    - assets/media/therock/2.jpg
+    - assets/media/therock/3.jpg
+    - assets/media/virat_kohli/1.jpg
+    - assets/media/virat_kohli/2.jpg
+    - assets/media/virat_kohli/3.jpg
+    - assets/media/zendaya/1.jpg
+    - assets/media/zendaya/2.jpg
+    - assets/media/zendaya/3.jpg
 
   # To add assets to your application, add an assets section, like this:
   # assets:

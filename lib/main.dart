@@ -18,8 +18,9 @@ class AppColors {
 class CreatorProfile {
   final String name;
   final String username;
+  final bool isVerified;
 
-  const CreatorProfile(this.name, this.username);
+  const CreatorProfile(this.name, this.username, {this.isVerified = true});
 }
 
 const creatorProfiles = <CreatorProfile>[
@@ -438,7 +439,6 @@ class _PostCardState extends State<PostCard> {
 
   @override
   Widget build(BuildContext context) {
-    bool isVerified = widget.index % 2 == 0;
     final creator = creatorProfiles[widget.index % creatorProfiles.length];
     final mediaSlug = creatorMediaSlug(creator);
     final mediaAsset = bundledCreatorSlugs.contains(mediaSlug)
@@ -469,7 +469,7 @@ class _PostCardState extends State<PostCard> {
                   ),
                 ),
                 const SizedBox(width: 4),
-                if (isVerified)
+                if (creator.isVerified)
                   const Icon(Icons.verified, color: Colors.blue, size: 16),
               ],
             ),
