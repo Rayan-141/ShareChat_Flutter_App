@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   runApp(const ShareChatCloneApp());
@@ -372,6 +375,24 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
+  Future<String?> _loadCreatorPhoto(String name) async {
+    final response = await http.get(Uri.https(
+      'en.wikipedia.org',
+      '/api/rest_v1/page/summary/${Uri.encodeComponent(name)}',
+    ));
+    if (response.statusCode != 200) return null;
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    return (data['thumbnail'] as Map<String, dynamic>?)?['source'] as String?;
+  }
+
+  Future<void> _watchCreatorVideos(CreatorProfile creator) async {
+    final query = Uri.encodeQueryComponent('${creator.name} famous moments official');
+    final url = Uri.parse('https://www.youtube.com/results?search_query=$query');
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication) && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open video search.')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     bool isVerified = widget.index % 2 == 0;
@@ -421,21 +442,41 @@ class _PostCardState extends State<PostCard> {
               style: const TextStyle(fontSize: 16),
             ),
           ),
-          Container(
-            height: 250,
-            width: double.infinity,
-            color: Colors.grey[200],
-            child: Center(
-              child: widget.index % 2 == 0
-                  ? const Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+          FutureBuilder<String?>(
+            future: _loadCreatorPhoto(creator.name),
+            builder: (context, snapshot) {
+              final photoUrl = snapshot.data;
+              return Stack(
+                alignment: Alignment.bottomLeft,
+                children: [
+                  Container(
+                    height: 250,
+                    width: double.infinity,
+                    color: Colors.grey[200],
+                    child: photoUrl == null
+                        ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                        : Image.network(photoUrl, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.broken_image, size: 64))),
+                  ),
+                  Container(
+                    width: double.infinity,
+                    color: Colors.black54,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    child: Row(
                       children: [
-                        Icon(Icons.play_circle_fill, size: 64, color: Colors.black54),
-                        Text('Video Content')
+                        const Icon(Icons.public, color: Colors.white70, size: 16),
+                        const SizedBox(width: 6),
+                        const Expanded(child: Text('Public profile photo preview', style: TextStyle(color: Colors.white70, fontSize: 12))),
+                        TextButton.icon(
+                          onPressed: () => _watchCreatorVideos(creator),
+                          icon: const Icon(Icons.play_arrow, color: Colors.white, size: 18),
+                          label: const Text('Videos', style: TextStyle(color: Colors.white)),
+                        ),
                       ],
-                    )
-                  : const Icon(Icons.image, size: 64, color: Colors.black54),
-            ),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
           Padding(
             padding: const EdgeInsets.all(12.0),
