@@ -153,6 +153,10 @@ String creatorMediaSlug(CreatorProfile creator) {
   return creator.username.substring(1).replaceAll(RegExp(r'[^a-z0-9]+'), '_');
 }
 
+final feedCreatorProfiles = creatorProfiles
+    .where((creator) => bundledCreatorSlugs.contains(creatorMediaSlug(creator)))
+    .toList(growable: false);
+
 class ShareChatCloneApp extends StatelessWidget {
   const ShareChatCloneApp({super.key});
 
@@ -306,7 +310,7 @@ class HomeScreen extends StatelessWidget {
           ),
           Expanded(
             child: ListView.builder(
-              itemCount: creatorProfiles.length,
+              itemCount: feedCreatorProfiles.length,
               itemBuilder: (context, index) {
                 return PostCard(index: index, language: language);
               },
@@ -470,15 +474,22 @@ class _PostCardState extends State<PostCard> {
 
   @override
   Widget build(BuildContext context) {
-    final creator = creatorProfiles[widget.index % creatorProfiles.length];
+    final creator =
+        feedCreatorProfiles[widget.index % feedCreatorProfiles.length];
     final mediaSlug = creatorMediaSlug(creator);
     final hasMedia = bundledCreatorSlugs.contains(mediaSlug);
     final mediaVariant = multiVariantCreatorSlugs.contains(mediaSlug)
-      ? _mediaVariant
-      : 1;
+        ? _mediaVariant
+        : 1;
     final mediaAsset = hasMedia
-      ? 'assets/media/$mediaSlug/$mediaVariant.jpg'
-      : 'assets/media/creator_placeholder.png';
+        ? 'assets/media/$mediaSlug/$mediaVariant.jpg'
+        : 'assets/media/creator_placeholder.png';
+    final avatarVariant = multiVariantCreatorSlugs.contains(mediaSlug)
+        ? (mediaVariant == 1 ? 2 : 1)
+        : 1;
+    final avatarAsset = hasMedia
+        ? 'assets/media/$mediaSlug/$avatarVariant.jpg'
+        : 'assets/media/creator_placeholder.png';
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       elevation: 0,
@@ -489,7 +500,7 @@ class _PostCardState extends State<PostCard> {
           ListTile(
             leading: CircleAvatar(
               backgroundColor: AppColors.secondary,
-              backgroundImage: AssetImage(mediaAsset),
+              backgroundImage: AssetImage(avatarAsset),
             ),
             title: Row(
               children: [
@@ -554,15 +565,17 @@ class _PostCardState extends State<PostCard> {
               style: const TextStyle(fontSize: 16),
             ),
           ),
-          Container(
-            height: 250,
-            width: double.infinity,
-            color: Colors.grey[200],
-            child: Image.asset(
-              mediaAsset,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) =>
-                  const Center(child: Icon(Icons.broken_image, size: 64)),
+          ClipRect(
+            child: Container(
+              height: 250,
+              width: double.infinity,
+              color: Colors.grey[200],
+              child: Image.asset(
+                mediaAsset,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) =>
+                    const Center(child: Icon(Icons.broken_image, size: 64)),
+              ),
             ),
           ),
           Padding(
