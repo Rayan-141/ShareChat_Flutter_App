@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'dart:math';
 
 void main() {
@@ -102,11 +103,23 @@ const feedLocations = <String>[
   'Mexico City',
 ];
 
-const localCreatorMedia = <String>[
-  'assets/media/taylor_swift.png',
-  'assets/media/cristiano_ronaldo.jpg',
-  'assets/media/deepika_padukone.png',
-];
+const bundledCreatorSlugs = <String>{
+  'taylorswift',
+  'cristiano',
+  'virat_kohli',
+  'selenagomez',
+  'mrbeast',
+  'priyankachopra',
+  'leomessi',
+  'zendaya',
+  'therock',
+  'serenawilliams',
+  'iamsrk',
+};
+
+String creatorMediaSlug(CreatorProfile creator) {
+  return creator.username.substring(1).replaceAll(RegExp(r'[^a-z0-9]+'), '_');
+}
 
 class ShareChatCloneApp extends StatelessWidget {
   const ShareChatCloneApp({super.key});
@@ -159,7 +172,10 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   Widget build(BuildContext context) {
     final List<Widget> screens = [
-      HomeScreen(language: _selectedLanguage, onLanguageChange: _changeLanguage),
+      HomeScreen(
+        language: _selectedLanguage,
+        onLanguageChange: _changeLanguage,
+      ),
       TrendingScreen(language: _selectedLanguage),
       const CreatePostScreen(),
       const LiveStreamScreen(),
@@ -177,8 +193,14 @@ class _MainNavigationState extends State<MainNavigation> {
         unselectedFontSize: 14,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.local_fire_department), label: 'Trending'),
-          BottomNavigationBarItem(icon: Icon(Icons.add_circle, size: 48, color: AppColors.secondary), label: ''),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.local_fire_department),
+            label: 'Trending',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.add_circle, size: 48, color: AppColors.secondary),
+            label: '',
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.live_tv), label: 'Live'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
@@ -192,13 +214,20 @@ class HomeScreen extends StatelessWidget {
   final String language;
   final Function(String) onLanguageChange;
 
-  const HomeScreen({super.key, required this.language, required this.onLanguageChange});
+  const HomeScreen({
+    super.key,
+    required this.language,
+    required this.onLanguageChange,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ShareChat', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'ShareChat',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         actions: [
           IconButton(icon: const Icon(Icons.notifications), onPressed: () {}),
           IconButton(
@@ -206,10 +235,13 @@ class HomeScreen extends StatelessWidget {
             onPressed: () {
               showModalBottomSheet(
                 context: context,
-                builder: (ctx) => LanguageSelector(currentLang: language, onSelect: (l) {
-                  onLanguageChange(l);
-                  Navigator.pop(ctx);
-                }),
+                builder: (ctx) => LanguageSelector(
+                  currentLang: language,
+                  onSelect: (l) {
+                    onLanguageChange(l);
+                    Navigator.pop(ctx);
+                  },
+                ),
               );
             },
           ),
@@ -274,9 +306,21 @@ class HomeScreen extends StatelessWidget {
 class LanguageSelector extends StatelessWidget {
   final String currentLang;
   final Function(String) onSelect;
-  LanguageSelector({super.key, required this.currentLang, required this.onSelect});
+  LanguageSelector({
+    super.key,
+    required this.currentLang,
+    required this.onSelect,
+  });
 
-  final List<String> languages = ['English', 'हिन्दी (Hindi)', 'मराठी (Marathi)', 'தமிழ் (Tamil)', 'বাংলা (Bengali)', 'తెలుగు (Telugu)', 'ગુજરાતી (Gujarati)'];
+  final List<String> languages = [
+    'English',
+    'हिन्दी (Hindi)',
+    'मराठी (Marathi)',
+    'தமிழ் (Tamil)',
+    'বাংলা (Bengali)',
+    'తెలుగు (Telugu)',
+    'ગુજરાતી (Gujarati)',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -284,14 +328,19 @@ class LanguageSelector extends StatelessWidget {
       children: [
         const Padding(
           padding: EdgeInsets.all(16.0),
-          child: Text('Choose Your Language', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          child: Text(
+            'Choose Your Language',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
         ),
         Expanded(
           child: ListView.builder(
             itemCount: languages.length,
             itemBuilder: (ctx, i) => ListTile(
               title: Text(languages[i]),
-              trailing: currentLang == languages[i] ? const Icon(Icons.check_circle, color: AppColors.success) : const Icon(Icons.circle_outlined),
+              trailing: currentLang == languages[i]
+                  ? const Icon(Icons.check_circle, color: AppColors.success)
+                  : const Icon(Icons.circle_outlined),
               onTap: () => onSelect(languages[i]),
             ),
           ),
@@ -315,6 +364,7 @@ class _PostCardState extends State<PostCard> {
   late int _hoursAgo;
   late int _likes;
   late int _comments;
+  late int _mediaVariant;
   bool _isLiked = false;
 
   @override
@@ -324,6 +374,7 @@ class _PostCardState extends State<PostCard> {
     _hoursAgo = random.nextInt(23) + 1; // 1 to 23 hours ago
     _likes = random.nextInt(5000) + 100; // 100 to 5100 likes
     _comments = random.nextInt(500) + 10; // 10 to 510 comments
+    _mediaVariant = random.nextInt(3) + 1;
   }
 
   void _toggleLike() {
@@ -353,12 +404,17 @@ class _PostCardState extends State<PostCard> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Comments', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text(
+              'Comments',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 10),
             TextField(
               decoration: InputDecoration(
                 hintText: 'Add a comment...',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.send, color: AppColors.primary),
                   onPressed: () {
@@ -366,7 +422,9 @@ class _PostCardState extends State<PostCard> {
                     setState(() {
                       _comments++;
                     });
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Comment added!')));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Comment added!')),
+                    );
                   },
                 ),
               ),
@@ -382,7 +440,10 @@ class _PostCardState extends State<PostCard> {
   Widget build(BuildContext context) {
     bool isVerified = widget.index % 2 == 0;
     final creator = creatorProfiles[widget.index % creatorProfiles.length];
-    final mediaAsset = localCreatorMedia[widget.index % localCreatorMedia.length];
+    final mediaSlug = creatorMediaSlug(creator);
+    final mediaAsset = bundledCreatorSlugs.contains(mediaSlug)
+        ? 'assets/media/$mediaSlug/$_mediaVariant.jpg'
+        : 'assets/media/creator_placeholder.svg';
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       elevation: 0,
@@ -391,12 +452,25 @@ class _PostCardState extends State<PostCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ListTile(
-            leading: CircleAvatar(backgroundColor: AppColors.secondary, child: Text('U${widget.index}', style: const TextStyle(color: Colors.white))),
+            leading: CircleAvatar(
+              backgroundColor: AppColors.secondary,
+              child: Text(
+                'U${widget.index}',
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
             title: Row(
               children: [
-                Flexible(child: Text(creator.name, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold))),
+                Flexible(
+                  child: Text(
+                    creator.name,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
                 const SizedBox(width: 4),
-                if (isVerified) const Icon(Icons.verified, color: Colors.blue, size: 16),
+                if (isVerified)
+                  const Icon(Icons.verified, color: Colors.blue, size: 16),
               ],
             ),
             subtitle: Text(
@@ -409,12 +483,29 @@ class _PostCardState extends State<PostCard> {
                   context: context,
                   builder: (ctx) => Wrap(
                     children: [
-                      const ListTile(title: Text('Community Guidelines', style: TextStyle(color: AppColors.primary))),
-                      ListTile(leading: const Icon(Icons.report), title: const Text('Report Post'), onTap: () {
-                        Navigator.pop(ctx);
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Report submitted for moderation.')));
-                      }),
-                      ListTile(leading: const Icon(Icons.block), title: const Text('Block User'), onTap: () => Navigator.pop(ctx)),
+                      const ListTile(
+                        title: Text(
+                          'Community Guidelines',
+                          style: TextStyle(color: AppColors.primary),
+                        ),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.report),
+                        title: const Text('Report Post'),
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Report submitted for moderation.'),
+                            ),
+                          );
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.block),
+                        title: const Text('Block User'),
+                        onTap: () => Navigator.pop(ctx),
+                      ),
                     ],
                   ),
                 );
@@ -422,7 +513,10 @@ class _PostCardState extends State<PostCard> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
             child: Text(
               feedCaptions[widget.index % feedCaptions.length],
               style: const TextStyle(fontSize: 16),
@@ -434,8 +528,9 @@ class _PostCardState extends State<PostCard> {
             color: Colors.grey[200],
             child: Image.asset(
               mediaAsset,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.broken_image, size: 64)),
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) =>
+                  const Center(child: Icon(Icons.broken_image, size: 64)),
             ),
           ),
           Padding(
@@ -449,9 +544,20 @@ class _PostCardState extends State<PostCard> {
                     padding: const EdgeInsets.all(8.0),
                     child: Row(
                       children: [
-                        Icon(_isLiked ? Icons.favorite : Icons.favorite_border, color: _isLiked ? Colors.red : Colors.grey),
+                        Icon(
+                          _isLiked ? Icons.favorite : Icons.favorite_border,
+                          color: _isLiked ? Colors.red : Colors.grey,
+                        ),
                         const SizedBox(width: 4),
-                        Text('$_likes', style: TextStyle(color: _isLiked ? Colors.red : Colors.black87, fontWeight: _isLiked ? FontWeight.bold : FontWeight.normal)),
+                        Text(
+                          '$_likes',
+                          style: TextStyle(
+                            color: _isLiked ? Colors.red : Colors.black87,
+                            fontWeight: _isLiked
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -464,7 +570,10 @@ class _PostCardState extends State<PostCard> {
                     padding: const EdgeInsets.all(8.0),
                     child: Row(
                       children: [
-                        const Icon(Icons.chat_bubble_outline, color: Colors.grey),
+                        const Icon(
+                          Icons.chat_bubble_outline,
+                          color: Colors.grey,
+                        ),
                         const SizedBox(width: 4),
                         Text('$_comments'),
                       ],
@@ -479,19 +588,40 @@ class _PostCardState extends State<PostCard> {
                       builder: (ctx) => Wrap(
                         children: [
                           const ListTile(title: Text('Share to platform')),
-                          ListTile(leading: const Icon(Icons.message, color: Colors.green), title: const Text('WhatsApp'), onTap: () => Navigator.pop(ctx)),
-                          ListTile(leading: const Icon(Icons.facebook, color: Colors.blue), title: const Text('Facebook'), onTap: () => Navigator.pop(ctx)),
-                          ListTile(leading: const Icon(Icons.copy), title: const Text('Copy Link'), onTap: () => Navigator.pop(ctx)),
+                          ListTile(
+                            leading: const Icon(
+                              Icons.message,
+                              color: Colors.green,
+                            ),
+                            title: const Text('WhatsApp'),
+                            onTap: () => Navigator.pop(ctx),
+                          ),
+                          ListTile(
+                            leading: const Icon(
+                              Icons.facebook,
+                              color: Colors.blue,
+                            ),
+                            title: const Text('Facebook'),
+                            onTap: () => Navigator.pop(ctx),
+                          ),
+                          ListTile(
+                            leading: const Icon(Icons.copy),
+                            title: const Text('Copy Link'),
+                            onTap: () => Navigator.pop(ctx),
+                          ),
                         ],
                       ),
                     );
                   },
                   icon: const Icon(Icons.share, color: Colors.grey),
-                  label: const Text('Share', style: TextStyle(color: Colors.grey)),
-                )
+                  label: const Text(
+                    'Share',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
@@ -512,7 +642,14 @@ class TrendingScreen extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Text('Top Trends in $language', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary)),
+            child: Text(
+              'Top Trends in $language',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
+            ),
           ),
           Expanded(
             child: ListView(
@@ -523,10 +660,33 @@ class TrendingScreen extends StatelessWidget {
                 _buildTrendItem('#Food', '11.4K posts'),
                 const Padding(
                   padding: EdgeInsets.all(16.0),
-                  child: Text('Trending Creators', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                  child: Text(
+                    'Trending Creators',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
                 ),
-                ListTile(leading: const CircleAvatar(child: Icon(Icons.person)), title: const Text('Creator A'), subtitle: const Text('1.2M followers'), trailing: ElevatedButton(onPressed: () {}, child: const Text('Follow'))),
-                ListTile(leading: const CircleAvatar(child: Icon(Icons.person)), title: const Text('Creator B'), subtitle: const Text('850K followers'), trailing: ElevatedButton(onPressed: () {}, child: const Text('Follow'))),
+                ListTile(
+                  leading: const CircleAvatar(child: Icon(Icons.person)),
+                  title: const Text('Creator A'),
+                  subtitle: const Text('1.2M followers'),
+                  trailing: ElevatedButton(
+                    onPressed: () {},
+                    child: const Text('Follow'),
+                  ),
+                ),
+                ListTile(
+                  leading: const CircleAvatar(child: Icon(Icons.person)),
+                  title: const Text('Creator B'),
+                  subtitle: const Text('850K followers'),
+                  trailing: ElevatedButton(
+                    onPressed: () {},
+                    child: const Text('Follow'),
+                  ),
+                ),
               ],
             ),
           ),
@@ -582,14 +742,19 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('What\'s happening?', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text(
+              'What\'s happening?',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 10),
             TextField(
               controller: _controller,
               maxLines: 4,
               decoration: InputDecoration(
                 hintText: 'Type here (e.g. aaj mausam accha hai)',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
             const SizedBox(height: 10),
@@ -612,12 +777,18 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   },
                   icon: const Icon(Icons.translate),
                   label: const Text('Transliterate'),
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.secondary, foregroundColor: Colors.white),
-                )
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.secondary,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
               ],
             ),
             const Divider(height: 40),
-            const Text('Media Upload (Tier-2/3 Optimized)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const Text(
+              'Media Upload (Tier-2/3 Optimized)',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 10),
             Row(
               children: [
@@ -635,30 +806,58 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       showModalBottomSheet(
                         context: context,
                         builder: (ctx) => StatefulBuilder(
-                          builder: (BuildContext context, StateSetter setModalState) {
-                            return Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const ListTile(title: Text('Video Compression', style: TextStyle(fontWeight: FontWeight.bold))),
-                                ListTile(leading: const Icon(Icons.high_quality), title: const Text('High (40 MB)'), onTap: () => Navigator.pop(ctx)),
-                                ListTile(leading: const Icon(Icons.sd), title: const Text('Medium (20 MB)'), onTap: () => Navigator.pop(ctx)),
-                                ListTile(leading: const Icon(Icons.data_saver_on, color: AppColors.success), title: const Text('Low (10 MB)'), onTap: () => Navigator.pop(ctx)),
-                                CheckboxListTile(
-                                  title: const Text('Low Data Mode'),
-                                  subtitle: const Text('Automatically compress for slow networks'),
-                                  value: _isLowDataMode,
-                                  onChanged: (val) {
-                                    setModalState(() {
-                                      _isLowDataMode = val!;
-                                    });
-                                    setState(() {
-                                      _isLowDataMode = val!;
-                                    });
-                                  },
-                                ),
-                              ],
-                            );
-                          },
+                          builder:
+                              (
+                                BuildContext context,
+                                StateSetter setModalState,
+                              ) {
+                                return Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const ListTile(
+                                      title: Text(
+                                        'Video Compression',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    ListTile(
+                                      leading: const Icon(Icons.high_quality),
+                                      title: const Text('High (40 MB)'),
+                                      onTap: () => Navigator.pop(ctx),
+                                    ),
+                                    ListTile(
+                                      leading: const Icon(Icons.sd),
+                                      title: const Text('Medium (20 MB)'),
+                                      onTap: () => Navigator.pop(ctx),
+                                    ),
+                                    ListTile(
+                                      leading: const Icon(
+                                        Icons.data_saver_on,
+                                        color: AppColors.success,
+                                      ),
+                                      title: const Text('Low (10 MB)'),
+                                      onTap: () => Navigator.pop(ctx),
+                                    ),
+                                    CheckboxListTile(
+                                      title: const Text('Low Data Mode'),
+                                      subtitle: const Text(
+                                        'Automatically compress for slow networks',
+                                      ),
+                                      value: _isLowDataMode,
+                                      onChanged: (val) {
+                                        setModalState(() {
+                                          _isLowDataMode = val!;
+                                        });
+                                        setState(() {
+                                          _isLowDataMode = val!;
+                                        });
+                                      },
+                                    ),
+                                  ],
+                                );
+                              },
                         ),
                       );
                     },
@@ -674,13 +873,21 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               height: 50,
               child: ElevatedButton(
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Post published!')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Post published!')),
+                  );
                   _controller.clear();
                 },
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
-                child: const Text('POST', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text(
+                  'POST',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
               ),
-            )
+            ),
           ],
         ),
       ),
@@ -704,9 +911,20 @@ class LiveStreamScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.video_camera_front, size: 80, color: Colors.white24),
+                  const Icon(
+                    Icons.video_camera_front,
+                    size: 80,
+                    color: Colors.white24,
+                  ),
                   const SizedBox(height: 16),
-                  Text('LIVE VIDEO STREAM', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 24, fontWeight: FontWeight.bold)),
+                  Text(
+                    'LIVE VIDEO STREAM',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.5),
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -715,26 +933,59 @@ class LiveStreamScreen extends StatelessWidget {
               left: 16,
               child: Row(
                 children: [
-                  const CircleAvatar(backgroundImage: NetworkImage('https://via.placeholder.com/150')),
+                  const CircleAvatar(
+                    backgroundImage: NetworkImage(
+                      'https://via.placeholder.com/150',
+                    ),
+                  ),
                   const SizedBox(width: 8),
-                    Column(
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                        Row(
+                      Row(
                         children: [
-                            Text(creator.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                            const SizedBox(width: 4),
-                            const Icon(Icons.verified, color: Colors.blue, size: 14),
+                          Text(
+                            creator.name,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.verified,
+                            color: Colors.blue,
+                            size: 14,
+                          ),
                         ],
                       ),
-                        Text(creator.username, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                      Text(
+                        creator.username,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(width: 16),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(4)),
-                    child: const Text('LIVE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      'LIVE',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 10,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -757,8 +1008,17 @@ class LiveStreamScreen extends StatelessWidget {
                     child: const Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('⭐ SUPER CHAT - ₹100', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
-                        Text('Rayan: "Amazing stream! 🔥"', style: TextStyle(color: Colors.black)),
+                        Text(
+                          '⭐ SUPER CHAT - ₹100',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        Text(
+                          'Rayan: "Amazing stream! 🔥"',
+                          style: TextStyle(color: Colors.black),
+                        ),
                       ],
                     ),
                   ),
@@ -782,43 +1042,101 @@ class LiveStreamScreen extends StatelessWidget {
                         hintStyle: const TextStyle(color: Colors.white54),
                         filled: true,
                         fillColor: Colors.white24,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide.none,
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   IconButton(
-                    icon: const Icon(Icons.monetization_on, color: Colors.amber, size: 30),
+                    icon: const Icon(
+                      Icons.monetization_on,
+                      color: Colors.amber,
+                      size: 30,
+                    ),
                     onPressed: () {
                       showModalBottomSheet(
                         context: context,
                         builder: (ctx) => Wrap(
                           children: [
-                            const ListTile(title: Text('Highlight your message', style: TextStyle(fontWeight: FontWeight.bold))),
-                            ListTile(leading: const Text('₹10'), title: const Text('Super Chat'), onTap: () => Navigator.pop(ctx)),
-                            ListTile(leading: const Text('₹50'), title: const Text('Super Chat'), onTap: () => Navigator.pop(ctx)),
-                            ListTile(leading: const Text('₹100'), title: const Text('Super Chat (Highlighted)'), onTap: () => Navigator.pop(ctx)),
-                            ListTile(leading: const Text('₹500'), title: const Text('Super Chat (Premium)'), onTap: () => Navigator.pop(ctx)),
+                            const ListTile(
+                              title: Text(
+                                'Highlight your message',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            ListTile(
+                              leading: const Text('₹10'),
+                              title: const Text('Super Chat'),
+                              onTap: () => Navigator.pop(ctx),
+                            ),
+                            ListTile(
+                              leading: const Text('₹50'),
+                              title: const Text('Super Chat'),
+                              onTap: () => Navigator.pop(ctx),
+                            ),
+                            ListTile(
+                              leading: const Text('₹100'),
+                              title: const Text('Super Chat (Highlighted)'),
+                              onTap: () => Navigator.pop(ctx),
+                            ),
+                            ListTile(
+                              leading: const Text('₹500'),
+                              title: const Text('Super Chat (Premium)'),
+                              onTap: () => Navigator.pop(ctx),
+                            ),
                           ],
                         ),
                       );
                     },
                   ),
                   IconButton(
-                    icon: const Icon(Icons.card_giftcard, color: AppColors.secondary, size: 30),
+                    icon: const Icon(
+                      Icons.card_giftcard,
+                      color: AppColors.secondary,
+                      size: 30,
+                    ),
                     onPressed: () {
                       showModalBottomSheet(
                         context: context,
                         builder: (ctx) => Wrap(
                           children: [
-                            const ListTile(title: Text('Send Virtual Gift', style: TextStyle(fontWeight: FontWeight.bold))),
-                            ListTile(leading: const Text('❤️'), title: const Text('Heart'), trailing: const Text('₹10'), onTap: () => Navigator.pop(ctx)),
-                            ListTile(leading: const Text('🌹'), title: const Text('Rose'), trailing: const Text('₹20'), onTap: () => Navigator.pop(ctx)),
-                            ListTile(leading: const Text('👑'), title: const Text('Crown'), trailing: const Text('₹500'), onTap: () {
-                              Navigator.pop(ctx);
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('You sent a Crown!')));
-                            }),
+                            const ListTile(
+                              title: Text(
+                                'Send Virtual Gift',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            ListTile(
+                              leading: const Text('❤️'),
+                              title: const Text('Heart'),
+                              trailing: const Text('₹10'),
+                              onTap: () => Navigator.pop(ctx),
+                            ),
+                            ListTile(
+                              leading: const Text('🌹'),
+                              title: const Text('Rose'),
+                              trailing: const Text('₹20'),
+                              onTap: () => Navigator.pop(ctx),
+                            ),
+                            ListTile(
+                              leading: const Text('👑'),
+                              title: const Text('Crown'),
+                              trailing: const Text('₹500'),
+                              onTap: () {
+                                Navigator.pop(ctx);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('You sent a Crown!'),
+                                  ),
+                                );
+                              },
+                            ),
                           ],
                         ),
                       );
@@ -838,7 +1156,13 @@ class LiveStreamScreen extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
         children: [
-          Text('$user: ', style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.bold)),
+          Text(
+            '$user: ',
+            style: const TextStyle(
+              color: Colors.white70,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           Text(text, style: const TextStyle(color: Colors.white)),
         ],
       ),
@@ -864,17 +1188,35 @@ class ProfileScreen extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 20),
               child: Column(
                 children: [
-                  const CircleAvatar(radius: 40, backgroundColor: Colors.white, child: Icon(Icons.person, size: 40, color: AppColors.primary)),
+                  const CircleAvatar(
+                    radius: 40,
+                    backgroundColor: Colors.white,
+                    child: Icon(
+                      Icons.person,
+                      size: 40,
+                      color: AppColors.primary,
+                    ),
+                  ),
                   const SizedBox(height: 10),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(creator.name, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                      Text(
+                        creator.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const SizedBox(width: 4),
                       const Icon(Icons.verified, color: Colors.blue, size: 18),
                     ],
                   ),
-                  Text(creator.username, style: const TextStyle(color: Colors.white70)),
+                  Text(
+                    creator.username,
+                    style: const TextStyle(color: Colors.white70),
+                  ),
                   const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -887,9 +1229,12 @@ class ProfileScreen extends StatelessWidget {
                   const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: () {},
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.primary),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: AppColors.primary,
+                    ),
                     child: const Text('Edit Profile'),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -898,48 +1243,98 @@ class ProfileScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Content Categories', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const Text(
+                    'Content Categories',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
                   const SizedBox(height: 10),
                   Wrap(
                     spacing: 8,
                     children: [
-                      Chip(label: const Text('🎵 Music'), backgroundColor: AppColors.background),
-                      Chip(label: const Text('😂 Comedy'), backgroundColor: AppColors.background),
-                      Chip(label: const Text('🎥 Vlogs'), backgroundColor: AppColors.background),
+                      Chip(
+                        label: const Text('🎵 Music'),
+                        backgroundColor: AppColors.background,
+                      ),
+                      Chip(
+                        label: const Text('😂 Comedy'),
+                        backgroundColor: AppColors.background,
+                      ),
+                      Chip(
+                        label: const Text('🎥 Vlogs'),
+                        backgroundColor: AppColors.background,
+                      ),
                     ],
                   ),
                   const Divider(height: 40),
-                  const Text('Creator Dashboard', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  const Text(
+                    'Creator Dashboard',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      Expanded(child: _buildDashboardCard('Total Views', '1.24M', Icons.visibility)),
+                      Expanded(
+                        child: _buildDashboardCard(
+                          'Total Views',
+                          '1.24M',
+                          Icons.visibility,
+                        ),
+                      ),
                       const SizedBox(width: 10),
-                      Expanded(child: _buildDashboardCard('Engagement', '8.4%', Icons.trending_up)),
+                      Expanded(
+                        child: _buildDashboardCard(
+                          'Engagement',
+                          '8.4%',
+                          Icons.trending_up,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
                   Card(
                     elevation: 2,
                     child: ListTile(
-                      leading: const Icon(Icons.monetization_on, color: AppColors.success, size: 40),
-                      title: const Text('Monetization', style: TextStyle(fontWeight: FontWeight.bold)),
+                      leading: const Icon(
+                        Icons.monetization_on,
+                        color: AppColors.success,
+                        size: 40,
+                      ),
+                      title: const Text(
+                        'Monetization',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       subtitle: const Text('Your Earnings: ₹24,850'),
                       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                       onTap: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => const MonetizationScreen()));
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const MonetizationScreen(),
+                          ),
+                        );
                       },
                     ),
                   ),
                   Card(
                     elevation: 2,
                     child: ListTile(
-                      leading: const Icon(Icons.verified, color: Colors.blue, size: 40),
-                      title: const Text('Get Verified Badge', style: TextStyle(fontWeight: FontWeight.bold)),
+                      leading: const Icon(
+                        Icons.verified,
+                        color: Colors.blue,
+                        size: 40,
+                      ),
+                      title: const Text(
+                        'Get Verified Badge',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       subtitle: const Text('₹999 / year'),
                       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                       onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Subscribed to Verification Badge!')));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Subscribed to Verification Badge!'),
+                          ),
+                        );
                       },
                     ),
                   ),
@@ -955,7 +1350,14 @@ class ProfileScreen extends StatelessWidget {
   Widget _buildStat(String val, String label) {
     return Column(
       children: [
-        Text(val, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(
+          val,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         Text(label, style: const TextStyle(color: Colors.white70)),
       ],
     );
@@ -971,9 +1373,15 @@ class ProfileScreen extends StatelessWidget {
           children: [
             Icon(icon, color: AppColors.primary),
             const SizedBox(height: 8),
-            Text(title, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+            Text(
+              title,
+              style: const TextStyle(color: Colors.grey, fontSize: 12),
+            ),
             const SizedBox(height: 4),
-            Text(val, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            Text(
+              val,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
           ],
         ),
       ),
@@ -1000,49 +1408,98 @@ class MonetizationScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(24.0),
                 child: Column(
                   children: [
-                    const Text('Your Earnings', style: TextStyle(color: Colors.white70, fontSize: 16)),
+                    const Text(
+                      'Your Earnings',
+                      style: TextStyle(color: Colors.white70, fontSize: 16),
+                    ),
                     const SizedBox(height: 8),
-                    const Text('₹24,850', style: TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold)),
+                    const Text(
+                      '₹24,850',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 36,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 8),
-                    const Text('This Month', style: TextStyle(color: Colors.white70)),
+                    const Text(
+                      'This Month',
+                      style: TextStyle(color: Colors.white70),
+                    ),
                     const SizedBox(height: 20),
                     ElevatedButton(
                       onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Withdrawal Request Sent!')));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Withdrawal Request Sent!'),
+                          ),
+                        );
                       },
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.primary),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppColors.primary,
+                      ),
                       child: const Text('Withdraw Funds'),
-                    )
+                    ),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 24),
-            const Text('Revenue Breakdown', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            const Text(
+              'Revenue Breakdown',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
             const SizedBox(height: 12),
             const ListTile(
               leading: Icon(Icons.pie_chart, color: AppColors.primary),
               title: Text('Creator Revenue Share'),
-              trailing: Text('70%', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.success)),
+              trailing: Text(
+                '70%',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: AppColors.success,
+                ),
+              ),
             ),
             const Divider(),
             const ListTile(
               leading: Icon(Icons.business, color: Colors.grey),
               title: Text('Platform Share'),
-              trailing: Text('30%', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey)),
+              trailing: Text(
+                '30%',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.grey,
+                ),
+              ),
             ),
             const SizedBox(height: 24),
-            const Text('Earnings Sources', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            const Text(
+              'Earnings Sources',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
             const SizedBox(height: 12),
             ListTile(
               leading: const Icon(Icons.monetization_on, color: Colors.amber),
               title: const Text('Super Chat'),
-              trailing: const Text('₹18,200', style: TextStyle(fontWeight: FontWeight.bold)),
+              trailing: const Text(
+                '₹18,200',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
             ListTile(
-              leading: const Icon(Icons.card_giftcard, color: AppColors.secondary),
+              leading: const Icon(
+                Icons.card_giftcard,
+                color: AppColors.secondary,
+              ),
               title: const Text('Virtual Gifts'),
-              trailing: const Text('₹6,650', style: TextStyle(fontWeight: FontWeight.bold)),
+              trailing: const Text(
+                '₹6,650',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),
