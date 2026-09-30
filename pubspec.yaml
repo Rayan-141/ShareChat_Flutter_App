@@ -60,13 +60,25 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/media/creator_placeholder.svg
+    - assets/media/creator_placeholder.png
+    - assets/media/aliaabhatt/1.jpg
+    - assets/media/arianagrande/1.jpg
+    - assets/media/badgalriri/1.jpg
+    - assets/media/billieeilish/1.jpg
+    - assets/media/chrishemsworth/1.jpg
     - assets/media/cristiano/1.jpg
     - assets/media/cristiano/2.jpg
     - assets/media/cristiano/3.jpg
+    - assets/media/deepikapadukone/1.jpg
+    - assets/media/dualipa/1.jpg
+    - assets/media/elonmusk/1.jpg
+    - assets/media/emmawatson/1.jpg
     - assets/media/iamsrk/1.jpg
     - assets/media/iamsrk/2.jpg
     - assets/media/iamsrk/3.jpg
+    - assets/media/jackiechan/1.jpg
+    - assets/media/k_mbappe/1.jpg
+    - assets/media/kingjames/1.jpg
     - assets/media/leomessi/1.jpg
     - assets/media/leomessi/2.jpg
     - assets/media/leomessi/3.jpg
@@ -76,18 +88,23 @@ flutter:
     - assets/media/priyankachopra/1.jpg
     - assets/media/priyankachopra/2.jpg
     - assets/media/priyankachopra/3.jpg
+    - assets/media/pewdiepie/1.jpg
     - assets/media/selenagomez/1.jpg
     - assets/media/selenagomez/2.jpg
     - assets/media/selenagomez/3.jpg
     - assets/media/serenawilliams/1.jpg
     - assets/media/serenawilliams/2.jpg
     - assets/media/serenawilliams/3.jpg
+    - assets/media/shakira/1.jpg
+    - assets/media/simonebiles/1.jpg
     - assets/media/taylorswift/1.jpg
     - assets/media/taylorswift/2.jpg
     - assets/media/taylorswift/3.jpg
     - assets/media/therock/1.jpg
     - assets/media/therock/2.jpg
     - assets/media/therock/3.jpg
+    - assets/media/teddysphotos/1.jpg
+    - assets/media/thisisbillgates/1.jpg
     - assets/media/virat_kohli/1.jpg
     - assets/media/virat_kohli/2.jpg
     - assets/media/virat_kohli/3.jpg

@@ -116,6 +116,37 @@ const bundledCreatorSlugs = <String>{
   'therock',
   'serenawilliams',
   'iamsrk',
+  'billieeilish',
+  'elonmusk',
+  'arianagrande',
+  'badgalriri',
+  'jackiechan',
+  'dualipa',
+  'kingjames',
+  'simonebiles',
+  'k_mbappe',
+  'deepikapadukone',
+  'aliaabhatt',
+  'emmawatson',
+  'chrishemsworth',
+  'pewdiepie',
+  'shakira',
+  'teddysphotos',
+  'thisisbillgates',
+};
+
+const multiVariantCreatorSlugs = <String>{
+  'taylorswift',
+  'cristiano',
+  'virat_kohli',
+  'selenagomez',
+  'mrbeast',
+  'priyankachopra',
+  'leomessi',
+  'zendaya',
+  'therock',
+  'serenawilliams',
+  'iamsrk',
 };
 
 String creatorMediaSlug(CreatorProfile creator) {
@@ -441,9 +472,13 @@ class _PostCardState extends State<PostCard> {
   Widget build(BuildContext context) {
     final creator = creatorProfiles[widget.index % creatorProfiles.length];
     final mediaSlug = creatorMediaSlug(creator);
-    final mediaAsset = bundledCreatorSlugs.contains(mediaSlug)
-        ? 'assets/media/$mediaSlug/$_mediaVariant.jpg'
-        : 'assets/media/creator_placeholder.svg';
+    final hasMedia = bundledCreatorSlugs.contains(mediaSlug);
+    final mediaVariant = multiVariantCreatorSlugs.contains(mediaSlug)
+      ? _mediaVariant
+      : 1;
+    final mediaAsset = hasMedia
+      ? 'assets/media/$mediaSlug/$mediaVariant.jpg'
+      : 'assets/media/creator_placeholder.png';
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       elevation: 0,
@@ -454,10 +489,7 @@ class _PostCardState extends State<PostCard> {
           ListTile(
             leading: CircleAvatar(
               backgroundColor: AppColors.secondary,
-              child: Text(
-                'U${widget.index}',
-                style: const TextStyle(color: Colors.white),
-              ),
+              backgroundImage: AssetImage(mediaAsset),
             ),
             title: Row(
               children: [
