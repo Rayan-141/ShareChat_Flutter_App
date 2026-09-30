@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   runApp(const ShareChatCloneApp());
@@ -103,6 +100,12 @@ const feedLocations = <String>[
   'Dubai',
   'Sydney',
   'Mexico City',
+];
+
+const localCreatorMedia = <String>[
+  'assets/media/taylor_swift.png',
+  'assets/media/cristiano_ronaldo.jpg',
+  'assets/media/deepika_padukone.png',
 ];
 
 class ShareChatCloneApp extends StatelessWidget {
@@ -375,28 +378,11 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  Future<String?> _loadCreatorPhoto(String name) async {
-    final response = await http.get(Uri.https(
-      'en.wikipedia.org',
-      '/api/rest_v1/page/summary/${Uri.encodeComponent(name)}',
-    ));
-    if (response.statusCode != 200) return null;
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
-    return (data['thumbnail'] as Map<String, dynamic>?)?['source'] as String?;
-  }
-
-  Future<void> _watchCreatorVideos(CreatorProfile creator) async {
-    final query = Uri.encodeQueryComponent('${creator.name} famous moments official');
-    final url = Uri.parse('https://www.youtube.com/results?search_query=$query');
-    if (!await launchUrl(url, mode: LaunchMode.externalApplication) && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open video search.')));
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     bool isVerified = widget.index % 2 == 0;
     final creator = creatorProfiles[widget.index % creatorProfiles.length];
+    final mediaAsset = localCreatorMedia[widget.index % localCreatorMedia.length];
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       elevation: 0,
@@ -442,41 +428,15 @@ class _PostCardState extends State<PostCard> {
               style: const TextStyle(fontSize: 16),
             ),
           ),
-          FutureBuilder<String?>(
-            future: _loadCreatorPhoto(creator.name),
-            builder: (context, snapshot) {
-              final photoUrl = snapshot.data;
-              return Stack(
-                alignment: Alignment.bottomLeft,
-                children: [
-                  Container(
-                    height: 250,
-                    width: double.infinity,
-                    color: Colors.grey[200],
-                    child: photoUrl == null
-                        ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                        : Image.network(photoUrl, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.broken_image, size: 64))),
-                  ),
-                  Container(
-                    width: double.infinity,
-                    color: Colors.black54,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.public, color: Colors.white70, size: 16),
-                        const SizedBox(width: 6),
-                        const Expanded(child: Text('Public profile photo preview', style: TextStyle(color: Colors.white70, fontSize: 12))),
-                        TextButton.icon(
-                          onPressed: () => _watchCreatorVideos(creator),
-                          icon: const Icon(Icons.play_arrow, color: Colors.white, size: 18),
-                          label: const Text('Videos', style: TextStyle(color: Colors.white)),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              );
-            },
+          Container(
+            height: 250,
+            width: double.infinity,
+            color: Colors.grey[200],
+            child: Image.asset(
+              mediaAsset,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.broken_image, size: 64)),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.all(12.0),
