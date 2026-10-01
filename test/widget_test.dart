@@ -16,5 +16,9 @@ void main() {
     expect(find.text('ShareChat'), findsOneWidget);
     expect(find.text('Taylor Swift'), findsOneWidget);
     expect(find.textContaining('@taylorswift'), findsOneWidget);
+
+    await tester.tap(find.text('मराठी'));
+    await tester.pump();
+    expect(find.text('आयुष्यात आनंद देणाऱ्या गोष्टींसाठी थोडी जागा ठेवा.'), findsOneWidget);
   });
 }

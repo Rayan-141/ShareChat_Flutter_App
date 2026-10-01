@@ -89,6 +89,53 @@ const feedCaptions = <String>[
   'Thank you for being part of this journey.',
 ];
 
+const localizedFeedCaptions = <String, List<String>>{
+  'Hindi': [
+    'Zindagi ki khoobsurat cheezon ke liye thodi jagah zaroor rakhein.',
+    'Mehnat khamosh hoti hai, nateeje khud bolte hain.',
+    'Har din ki chhoti koshish ek badi jeet ban sakti hai.',
+    'Aaj ka din muskurane aur sapne dekhne ke naam.',
+    'Is safar ka hissa banne ke liye shukriya.',
+  ],
+  'Marathi': [
+    'आयुष्यात आनंद देणाऱ्या गोष्टींसाठी थोडी जागा ठेवा.',
+    'मेहनत शांत असते, पण यश स्वतः बोलते.',
+    'दररोजची छोटी पावले मोठा बदल घडवतात.',
+    'आजचा दिवस हसण्यासाठी आणि स्वप्ने पाहण्यासाठी आहे.',
+    'या प्रवासाचा भाग झाल्याबद्दल धन्यवाद.',
+  ],
+  'Tamil': [
+    'உங்களை மகிழ்விக்கும் விஷயங்களுக்கு வாழ்க்கையில் இடம் கொடுங்கள்.',
+    'உழைப்பு அமைதியாக இருக்கும், வெற்றி தானாக பேசும்.',
+    'ஒவ்வொரு நாளும் சிறிய முயற்சிகள் பெரிய மாற்றத்தை தரும்.',
+    'இன்று சிரிக்கவும் கனவு காணவும் ஒரு நல்ல நாள்.',
+    'இந்த பயணத்தில் இணைந்ததற்கு நன்றி.',
+  ],
+  'Bengali': [
+    'জীবনকে আনন্দ দেয় এমন জিনিসের জন্য একটু জায়গা রাখুন।',
+    'পরিশ্রম নীরব থাকে, সাফল্য নিজেই কথা বলে।',
+    'প্রতিদিনের ছোট পদক্ষেপ বড় পরিবর্তন আনে।',
+    'আজ হাসার এবং স্বপ্ন দেখার জন্য একটি সুন্দর দিন।',
+    'এই যাত্রার অংশ হওয়ার জন্য ধন্যবাদ।',
+  ],
+};
+
+String localizedCaption(int index, String language) {
+  final languageKey = language.contains('Hindi')
+      ? 'Hindi'
+      : language.contains('Marathi')
+      ? 'Marathi'
+      : language.contains('Tamil')
+      ? 'Tamil'
+      : language.contains('Bengali')
+      ? 'Bengali'
+      : null;
+  final captions = languageKey == null
+      ? feedCaptions
+      : localizedFeedCaptions[languageKey]!;
+  return captions[index % captions.length];
+}
+
 const feedLocations = <String>[
   'Mumbai',
   'New York',
@@ -294,15 +341,35 @@ class HomeScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   const SizedBox(width: 8),
-                  _buildLanguageChip('English', language.contains('English')),
+                  _buildLanguageChip(
+                    'English',
+                    'English',
+                    language.contains('English'),
+                  ),
                   const SizedBox(width: 8),
-                  _buildLanguageChip('हिन्दी', language.contains('Hindi')),
+                  _buildLanguageChip(
+                    'हिन्दी',
+                    'हिन्दी (Hindi)',
+                    language.contains('Hindi'),
+                  ),
                   const SizedBox(width: 8),
-                  _buildLanguageChip('मराठी', language.contains('Marathi')),
+                  _buildLanguageChip(
+                    'मराठी',
+                    'मराठी (Marathi)',
+                    language.contains('Marathi'),
+                  ),
                   const SizedBox(width: 8),
-                  _buildLanguageChip('தமிழ்', language.contains('Tamil')),
+                  _buildLanguageChip(
+                    'தமிழ்',
+                    'தமிழ் (Tamil)',
+                    language.contains('Tamil'),
+                  ),
                   const SizedBox(width: 8),
-                  _buildLanguageChip('বাংলা', language.contains('Bengali')),
+                  _buildLanguageChip(
+                    'বাংলা',
+                    'বাংলা (Bengali)',
+                    language.contains('Bengali'),
+                  ),
                   const SizedBox(width: 8),
                 ],
               ),
@@ -321,18 +388,26 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLanguageChip(String label, bool isSelected) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      decoration: BoxDecoration(
-        color: isSelected ? Colors.white : Colors.white24,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: isSelected ? AppColors.primary : Colors.white,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+  Widget _buildLanguageChip(
+    String label,
+    String languageValue,
+    bool isSelected,
+  ) {
+    return InkWell(
+      onTap: () => onLanguageChange(languageValue),
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.white24,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? AppColors.primary : Colors.white,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
         ),
       ),
     );
@@ -561,7 +636,7 @@ class _PostCardState extends State<PostCard> {
               vertical: 8.0,
             ),
             child: Text(
-              feedCaptions[widget.index % feedCaptions.length],
+              localizedCaption(widget.index, widget.language),
               style: const TextStyle(fontSize: 16),
             ),
           ),
