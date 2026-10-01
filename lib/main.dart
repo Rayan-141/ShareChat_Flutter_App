@@ -856,18 +856,18 @@ class TrendingScreen extends StatelessWidget {
                 ),
                 _buildCreatorTile(
                   context,
-                  creatorProfiles[32],
-                  '2.1M followers',
+                  creatorProfiles[0],
+                  '285M followers',
                 ),
                 _buildCreatorTile(
                   context,
-                  creatorProfiles[33],
-                  '6.8M followers',
+                  creatorProfiles[1],
+                  '680M followers',
                 ),
                 _buildCreatorTile(
                   context,
-                  creatorProfiles[38],
-                  '17.4M followers',
+                  creatorProfiles[2],
+                  '275M followers',
                 ),
               ],
             ),
@@ -1323,6 +1323,7 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
               child: Row(
                 children: [
                   CircleAvatar(
+                    radius: 30,
                     backgroundImage: AssetImage(creatorAssetPath(creator)),
                   ),
                   const SizedBox(width: 8),
@@ -1335,6 +1336,7 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
                             creator.name,
                             style: const TextStyle(
                               color: Colors.white,
+                              fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -1350,7 +1352,7 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
                         creator.username,
                         style: const TextStyle(
                           color: Colors.white70,
-                          fontSize: 12,
+                          fontSize: 15,
                         ),
                       ),
                     ],
@@ -1399,12 +1401,13 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
                           '⭐ SUPER CHAT - ₹100',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
+                            fontSize: 18,
                             color: Colors.black87,
                           ),
                         ),
                         Text(
                           'Rayan: "Amazing stream! 🔥"',
-                          style: TextStyle(color: Colors.black),
+                          style: TextStyle(color: Colors.black, fontSize: 17),
                         ),
                       ],
                     ),
@@ -1557,14 +1560,25 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
         children: [
+          CircleAvatar(
+            radius: 16,
+            backgroundImage: AssetImage(creatorAssetPath(creatorProfiles[4])),
+          ),
+          const SizedBox(width: 8),
           Text(
             '$user: ',
             style: const TextStyle(
               color: Colors.white70,
+              fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
           ),
-          Text(text, style: const TextStyle(color: Colors.white)),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(color: Colors.white, fontSize: 17),
+            ),
+          ),
         ],
       ),
     );
@@ -1586,6 +1600,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _bio = 'Creator, developer, and storyteller';
   late final int _totalViews;
   late final int _earnings;
+  late final int _profileLikes;
 
   @override
   void initState() {
@@ -1593,6 +1608,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final random = Random();
     _totalViews = random.nextInt(9001) + 1000;
     _earnings = random.nextInt(9001) + 1000;
+    _profileLikes = random.nextInt(1001) + 1000;
   }
 
   Future<void> _editProfile() async {
@@ -1723,7 +1739,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       _buildStat('285', 'Followers'),
-                      _buildStat('127K', 'Likes'),
+                      _buildStat('$_profileLikes', 'Likes'),
                       _buildStat('190', 'Following'),
                     ],
                   ),
