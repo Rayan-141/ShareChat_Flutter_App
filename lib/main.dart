@@ -1376,12 +1376,107 @@ class LiveStreamScreen extends StatelessWidget {
 }
 
 // --- Creator Profile & Dashboard ---
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  String _firstName = 'Rayan';
+  String _lastName = 'Rawat';
+  String _username = 'Rayan_141';
+  String _bio = 'Creator, developer, and storyteller';
+  late final int _totalViews;
+  late final int _earnings;
+
+  @override
+  void initState() {
+    super.initState();
+    final random = Random();
+    _totalViews = random.nextInt(9001) + 1000;
+    _earnings = random.nextInt(9001) + 1000;
+  }
+
+  Future<void> _editProfile() async {
+    final firstNameController = TextEditingController(text: _firstName);
+    final lastNameController = TextEditingController(text: _lastName);
+    final usernameController = TextEditingController(text: _username);
+    final bioController = TextEditingController(text: _bio);
+
+    final updatedProfile = await showDialog<List<String>>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Edit Profile'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: firstNameController,
+                decoration: const InputDecoration(labelText: 'First name'),
+              ),
+              TextField(
+                controller: lastNameController,
+                decoration: const InputDecoration(labelText: 'Last name'),
+              ),
+              TextField(
+                controller: usernameController,
+                decoration: const InputDecoration(labelText: 'Username'),
+              ),
+              TextField(
+                controller: bioController,
+                maxLines: 2,
+                decoration: const InputDecoration(labelText: 'Bio'),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (firstNameController.text.trim().isEmpty ||
+                  usernameController.text.trim().isEmpty) {
+                return;
+              }
+              Navigator.pop(dialogContext, [
+                firstNameController.text.trim(),
+                lastNameController.text.trim(),
+                usernameController.text.trim().replaceFirst('@', ''),
+                bioController.text.trim(),
+              ]);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      firstNameController.dispose();
+      lastNameController.dispose();
+      usernameController.dispose();
+      bioController.dispose();
+    });
+
+    if (updatedProfile != null && mounted) {
+      setState(() {
+        _firstName = updatedProfile[0];
+        _lastName = updatedProfile[1];
+        _username = updatedProfile[2];
+        _bio = updatedProfile[3];
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final creator = creatorProfiles[5];
+    final fullName = '$_firstName $_lastName'.trim();
     return Scaffold(
       appBar: AppBar(title: const Text('Profile'), elevation: 0),
       body: SingleChildScrollView(
@@ -1396,10 +1491,13 @@ class ProfileScreen extends StatelessWidget {
                   const CircleAvatar(
                     radius: 40,
                     backgroundColor: Colors.white,
-                    child: Icon(
-                      Icons.person,
-                      size: 40,
-                      color: AppColors.primary,
+                    child: Text(
+                      'RR',
+                      style: TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -1407,7 +1505,7 @@ class ProfileScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        creator.name,
+                        fullName,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 20,
@@ -1419,21 +1517,23 @@ class ProfileScreen extends StatelessWidget {
                     ],
                   ),
                   Text(
-                    creator.username,
+                    '@$_username',
                     style: const TextStyle(color: Colors.white70),
                   ),
+                  const SizedBox(height: 6),
+                  Text(_bio, style: const TextStyle(color: Colors.white70)),
                   const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _buildStat('245K', 'Followers'),
-                      _buildStat('1.2M', 'Likes'),
-                      _buildStat('45', 'Following'),
+                      _buildStat('285', 'Followers'),
+                      _buildStat('127K', 'Likes'),
+                      _buildStat('190', 'Following'),
                     ],
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton(
-                    onPressed: () {},
+                    onPressed: _editProfile,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: AppColors.primary,
@@ -1481,7 +1581,7 @@ class ProfileScreen extends StatelessWidget {
                       Expanded(
                         child: _buildDashboardCard(
                           'Total Views',
-                          '1.24M',
+                          '$_totalViews',
                           Icons.visibility,
                         ),
                       ),
@@ -1508,13 +1608,14 @@ class ProfileScreen extends StatelessWidget {
                         'Monetization',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      subtitle: const Text('Your Earnings: ₹24,850'),
+                      subtitle: Text('Your Earnings: ₹$_earnings'),
                       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const MonetizationScreen(),
+                            builder: (context) =>
+                                MonetizationScreen(earnings: _earnings),
                           ),
                         );
                       },
@@ -1596,7 +1697,9 @@ class ProfileScreen extends StatelessWidget {
 
 // --- Monetization Screen ---
 class MonetizationScreen extends StatelessWidget {
-  const MonetizationScreen({super.key});
+  final int earnings;
+
+  const MonetizationScreen({super.key, required this.earnings});
 
   @override
   Widget build(BuildContext context) {
@@ -1618,8 +1721,8 @@ class MonetizationScreen extends StatelessWidget {
                       style: TextStyle(color: Colors.white70, fontSize: 16),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      '₹24,850',
+                    Text(
+                      '₹$earnings',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 36,

@@ -34,4 +34,23 @@ void main() {
     expect(find.text('#Mumbai posts'), findsOneWidget);
     expect(find.textContaining('shared a mumbai update'), findsWidgets);
   });
+
+  testWidgets('Profile identity can be edited', (WidgetTester tester) async {
+    await tester.pumpWidget(const ShareChatCloneApp());
+
+    await tester.tap(find.byIcon(Icons.person).last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Edit Profile'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).at(0), 'Aarav');
+    await tester.enterText(find.byType(TextField).at(1), 'Sharma');
+    await tester.enterText(find.byType(TextField).at(2), 'aarav_sharma');
+    tester.testTextInput.hide();
+    await tester.pump();
+    await tester.tap(find.text('Save'));
+    await tester.pump();
+
+    expect(find.text('Aarav Sharma'), findsOneWidget);
+    expect(find.text('@aarav_sharma'), findsOneWidget);
+  });
 }
