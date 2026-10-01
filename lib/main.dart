@@ -464,8 +464,14 @@ class LanguageSelector extends StatelessWidget {
 class PostCard extends StatefulWidget {
   final int index;
   final String language;
+  final String? captionOverride;
 
-  const PostCard({super.key, required this.index, required this.language});
+  const PostCard({
+    super.key,
+    required this.index,
+    required this.language,
+    this.captionOverride,
+  });
 
   @override
   State<PostCard> createState() => _PostCardState();
@@ -636,7 +642,8 @@ class _PostCardState extends State<PostCard> {
               vertical: 8.0,
             ),
             child: Text(
-              localizedCaption(widget.index, widget.language),
+              widget.captionOverride ??
+                  localizedCaption(widget.index, widget.language),
               style: const TextStyle(fontSize: 16),
             ),
           ),
@@ -774,10 +781,10 @@ class TrendingScreen extends StatelessWidget {
           Expanded(
             child: ListView(
               children: [
-                _buildTrendItem('#Mumbai', '24.5K posts'),
-                _buildTrendItem('#Cricket', '18.2K posts'),
-                _buildTrendItem('#Festival', '15.8K posts'),
-                _buildTrendItem('#Food', '11.4K posts'),
+                _buildTrendItem(context, '#Mumbai', '24.5K posts'),
+                _buildTrendItem(context, '#Cricket', '18.2K posts'),
+                _buildTrendItem(context, '#Festival', '15.8K posts'),
+                _buildTrendItem(context, '#Food', '11.4K posts'),
                 const Padding(
                   padding: EdgeInsets.all(16.0),
                   child: Text(
@@ -789,23 +796,20 @@ class TrendingScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                ListTile(
-                  leading: const CircleAvatar(child: Icon(Icons.person)),
-                  title: const Text('Creator A'),
-                  subtitle: const Text('1.2M followers'),
-                  trailing: ElevatedButton(
-                    onPressed: () {},
-                    child: const Text('Follow'),
-                  ),
+                _buildCreatorTile(
+                  context,
+                  creatorProfiles[32],
+                  '2.1M followers',
                 ),
-                ListTile(
-                  leading: const CircleAvatar(child: Icon(Icons.person)),
-                  title: const Text('Creator B'),
-                  subtitle: const Text('850K followers'),
-                  trailing: ElevatedButton(
-                    onPressed: () {},
-                    child: const Text('Follow'),
-                  ),
+                _buildCreatorTile(
+                  context,
+                  creatorProfiles[33],
+                  '6.8M followers',
+                ),
+                _buildCreatorTile(
+                  context,
+                  creatorProfiles[38],
+                  '17.4M followers',
                 ),
               ],
             ),
@@ -815,12 +819,93 @@ class TrendingScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTrendItem(String hashtag, String count) {
+  Widget _buildTrendItem(BuildContext context, String hashtag, String count) {
     return ListTile(
       leading: const Icon(Icons.local_fire_department, color: Colors.orange),
       title: Text(hashtag, style: const TextStyle(fontWeight: FontWeight.bold)),
       subtitle: Text(count),
       trailing: const Icon(Icons.chevron_right),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TrendPostsScreen(
+              topic: hashtag.substring(1),
+              language: language,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCreatorTile(
+    BuildContext context,
+    CreatorProfile creator,
+    String followers,
+  ) {
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor: AppColors.secondary,
+        child: Text(
+          creator.name.substring(0, 1),
+          style: const TextStyle(color: Colors.white),
+        ),
+      ),
+      title: Row(
+        children: [
+          Flexible(child: Text(creator.name, overflow: TextOverflow.ellipsis)),
+          const SizedBox(width: 4),
+          if (creator.isVerified)
+            const Icon(Icons.verified, color: Colors.blue, size: 16),
+        ],
+      ),
+      subtitle: Text('${creator.username} • $followers'),
+      trailing: ElevatedButton(
+        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Following ${creator.username}')),
+        ),
+        child: const Text('Follow'),
+      ),
+    );
+  }
+}
+
+class TrendPostsScreen extends StatelessWidget {
+  final String topic;
+  final String language;
+
+  const TrendPostsScreen({
+    super.key,
+    required this.topic,
+    required this.language,
+  });
+
+  static const topicIndices = <String, List<int>>{
+    'Mumbai': [0, 5, 10, 13, 20],
+    'Cricket': [1, 2, 6, 8, 9],
+    'Festival': [3, 7, 11, 14, 17],
+    'Food': [4, 12, 15, 18, 19],
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final indices = topicIndices[topic] ?? topicIndices.values.first;
+    return Scaffold(
+      appBar: AppBar(title: Text('#$topic posts')),
+      body: ListView.builder(
+        itemCount: indices.length,
+        itemBuilder: (context, index) {
+          final creator =
+              feedCreatorProfiles[indices[index] % feedCreatorProfiles.length];
+          return PostCard(
+            index: indices[index] % feedCreatorProfiles.length,
+            language: language,
+            captionOverride:
+                '${creator.name} shared a ${topic.toLowerCase()} update with the community.',
+          );
+        },
+      ),
     );
   }
 }
