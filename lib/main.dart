@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'dart:async';
 import 'dart:math';
+
+import 'package:video_player/video_player.dart';
 
 void main() {
   runApp(const ShareChatCloneApp());
@@ -422,7 +425,11 @@ class HomeScreen extends StatelessWidget {
             child: ListView.builder(
               itemCount: homeCreators.length,
               itemBuilder: (context, index) {
-                return PostCard(index: index, creator: homeCreators[index], language: language);
+                return PostCard(
+                  index: index,
+                  creator: homeCreators[index],
+                  language: language,
+                );
               },
             ),
           ),
@@ -698,8 +705,10 @@ class _PostCardState extends State<PostCard> {
               mediaAsset,
               width: double.infinity,
               fit: BoxFit.fitWidth,
-              errorBuilder: (context, error, stackTrace) =>
-                  const SizedBox(height: 250, child: Center(child: Icon(Icons.broken_image, size: 64))),
+              errorBuilder: (context, error, stackTrace) => const SizedBox(
+                height: 250,
+                child: Center(child: Icon(Icons.broken_image, size: 64)),
+              ),
             ),
           ),
           Padding(
@@ -1144,8 +1153,109 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 }
 
 // --- Live Stream Screen ---
-class LiveStreamScreen extends StatelessWidget {
+class LiveStreamScreen extends StatefulWidget {
   const LiveStreamScreen({super.key});
+
+  @override
+  State<LiveStreamScreen> createState() => _LiveStreamScreenState();
+}
+
+class _LiveStreamScreenState extends State<LiveStreamScreen> {
+  late final VideoPlayerController _videoController;
+  final TextEditingController _commentController = TextEditingController();
+  final List<Map<String, String>> _liveComments = [
+    {'user': 'Rahul', 'text': 'Amazing! 🔥'},
+    {'user': 'Priya', 'text': 'Great stream'},
+    {'user': 'Ankit', 'text': '❤️❤️'},
+  ];
+  Timer? _chatTimer;
+  int _nextComment = 0;
+  String _chatLanguage = 'English';
+
+  final autoComments = const [
+    ('Maya', 'This live is incredible!'),
+    ('Arjun', 'बहुत बढ़िया stream 🔥'),
+    ('Kavya', 'Super performance!'),
+    ('Liam', 'Greetings from London!'),
+    ('Aisha', 'வணக்கம் everyone!'),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _videoController =
+        VideoPlayerController.networkUrl(
+            Uri.parse(
+              'https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4',
+            ),
+          )
+          ..setLooping(true)
+          ..initialize().then((_) {
+            if (mounted) {
+              setState(() {});
+              _videoController.play();
+            }
+          });
+    _chatTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      final comment = autoComments[_nextComment % autoComments.length];
+      _nextComment++;
+      if (mounted) {
+        setState(
+          () => _liveComments.add({'user': comment.$1, 'text': comment.$2}),
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _chatTimer?.cancel();
+    _commentController.dispose();
+    _videoController.dispose();
+    super.dispose();
+  }
+
+  void _sendComment() {
+    final text = _commentController.text.trim();
+    if (text.isEmpty) return;
+    setState(() {
+      _liveComments.add({'user': 'Rayan', 'text': text});
+      _commentController.clear();
+    });
+  }
+
+  void _chooseChatLanguage() {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => ListView(
+        shrinkWrap: true,
+        children:
+            [
+                  'English',
+                  'हिन्दी',
+                  'मराठी',
+                  'தமிழ்',
+                  'বাংলা',
+                  'తెలుగు',
+                  'ગુજરાતી',
+                ]
+                .map(
+                  (language) => ListTile(
+                    leading: const Icon(Icons.translate),
+                    title: Text(language),
+                    trailing: language == _chatLanguage
+                        ? const Icon(Icons.check, color: AppColors.primary)
+                        : null,
+                    onTap: () {
+                      setState(() => _chatLanguage = language);
+                      Navigator.pop(ctx);
+                    },
+                  ),
+                )
+                .toList(),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1155,26 +1265,21 @@ class LiveStreamScreen extends StatelessWidget {
       child: SafeArea(
         child: Stack(
           children: [
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.video_camera_front,
-                    size: 80,
-                    color: Colors.white24,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'LIVE VIDEO STREAM',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.5),
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+            Positioned.fill(
+              child: _videoController.value.isInitialized
+                  ? FittedBox(
+                      fit: BoxFit.cover,
+                      child: SizedBox(
+                        width: _videoController.value.size.width,
+                        height: _videoController.value.size.height,
+                        child: VideoPlayer(_videoController),
+                      ),
+                    )
+                  : const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.secondary,
+                      ),
                     ),
-                  ),
-                ],
-              ),
             ),
             Positioned(
               top: 16,
@@ -1268,9 +1373,12 @@ class LiveStreamScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  _buildComment('Rahul', 'Amazing! 🔥'),
-                  _buildComment('Priya', 'Great stream'),
-                  _buildComment('Ankit', '❤️❤️'),
+                  ..._liveComments
+                      .take(8)
+                      .map(
+                        (comment) =>
+                            _buildComment(comment['user']!, comment['text']!),
+                      ),
                 ],
               ),
             ),
@@ -1282,9 +1390,12 @@ class LiveStreamScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: TextField(
+                      controller: _commentController,
                       style: const TextStyle(color: Colors.white),
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) => _sendComment(),
                       decoration: InputDecoration(
-                        hintText: 'Write a comment...',
+                        hintText: 'Write in $_chatLanguage...',
                         hintStyle: const TextStyle(color: Colors.white54),
                         filled: true,
                         fillColor: Colors.white24,
@@ -1299,6 +1410,14 @@ class LiveStreamScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.translate, color: Colors.white70),
+                    onPressed: _chooseChatLanguage,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.send, color: Colors.white),
+                    onPressed: _sendComment,
+                  ),
                   IconButton(
                     icon: const Icon(
                       Icons.monetization_on,
