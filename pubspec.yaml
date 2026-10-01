@@ -62,6 +62,10 @@ flutter:
 
   assets:
     - assets/media/creator_placeholder.png
+    - assets/media/viewer_avatar_1.png
+    - assets/media/viewer_avatar_2.png
+    - assets/media/viewer_avatar_3.png
+    - assets/media/viewer_avatar_4.png
     - assets/media/aliaabhatt/1.jpg
     - assets/media/arianagrande/1.jpg
     - assets/media/badgalriri/1.jpg

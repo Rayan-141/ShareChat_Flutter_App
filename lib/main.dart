@@ -252,6 +252,18 @@ String creatorAssetPath(CreatorProfile creator) {
       : 'assets/media/creator_placeholder.png';
 }
 
+const viewerAvatarPaths = <String, String>{
+  'Rahul': 'assets/media/viewer_avatar_1.png',
+  'Priya': 'assets/media/viewer_avatar_2.png',
+  'Ankit': 'assets/media/viewer_avatar_3.png',
+  'Maya': 'assets/media/viewer_avatar_4.png',
+  'Arjun': 'assets/media/viewer_avatar_1.png',
+  'Kavya': 'assets/media/viewer_avatar_2.png',
+  'Liam': 'assets/media/viewer_avatar_3.png',
+  'Aisha': 'assets/media/viewer_avatar_4.png',
+  'Rayan': 'assets/media/viewer_avatar_1.png',
+};
+
 final feedCreatorProfiles = creatorProfiles
     .where((creator) => bundledCreatorSlugs.contains(creatorMediaSlug(creator)))
     .toList(growable: false);
@@ -1562,7 +1574,9 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
         children: [
           CircleAvatar(
             radius: 16,
-            backgroundImage: AssetImage(creatorAssetPath(creatorProfiles[4])),
+            backgroundImage: AssetImage(
+              viewerAvatarPaths[user] ?? viewerAvatarPaths.values.first,
+            ),
           ),
           const SizedBox(width: 8),
           Text(
