@@ -150,6 +150,48 @@ const feedLocations = <String>[
   'Sydney',
   'Mexico City',
 ];
+const creatorLocations = <String, String>{
+  '@taylorswift': 'Nashville',
+  '@cristiano': 'Funchal',
+  '@virat.kohli': 'Mumbai',
+  '@selenagomez': 'Los Angeles',
+  '@mrbeast': 'Greenville',
+  '@priyankachopra': 'Mumbai',
+  '@leomessi': 'Rosario',
+  '@zendaya': 'Los Angeles',
+  '@therock': 'Miami',
+  '@serenawilliams': 'Palm Beach',
+  '@iamsrk': 'Mumbai',
+  '@billieeilish': 'Los Angeles',
+  '@elonmusk': 'Austin',
+  '@arianagrande': 'Boca Raton',
+  '@badgalriri': 'Bridgetown',
+  '@jackiechan': 'Hong Kong',
+  '@dualipa': 'London',
+  '@lalalalisa_m': 'Bangkok',
+  '@kingjames': 'Los Angeles',
+  '@simonebiles': 'Houston',
+  '@k.mbappe': 'Paris',
+  '@deepikapadukone': 'Bengaluru',
+  '@aliaabhatt': 'Mumbai',
+  '@emmawatson': 'Oxford',
+  '@chrishemsworth': 'Byron Bay',
+  '@vancityreynolds': 'New York',
+  '@kimkardashian': 'Los Angeles',
+  '@zuck': 'Palo Alto',
+  '@oprah': 'Montecito',
+  '@thisisbillgates': 'Seattle',
+  '@gordongram': 'London',
+  '@davidbeckham': 'London',
+  '@mkbhd': 'New York',
+  '@lilly': 'Los Angeles',
+  '@hudabeauty': 'Dubai',
+  '@pewdiepie': 'Brighton',
+  '@djokernole': 'Belgrade',
+  '@shakira': 'Miami',
+  '@teddysphotos': 'Suffolk',
+  '@bts.bighitofficial': 'Seoul',
+};
 
 const bundledCreatorSlugs = <String>{
   'taylorswift',
@@ -305,6 +347,7 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final homeCreators = feedCreatorProfiles.toList()..shuffle(Random());
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -377,9 +420,9 @@ class HomeScreen extends StatelessWidget {
           ),
           Expanded(
             child: ListView.builder(
-              itemCount: feedCreatorProfiles.length,
+              itemCount: homeCreators.length,
               itemBuilder: (context, index) {
-                return PostCard(index: index, language: language);
+                return PostCard(index: index, creator: homeCreators[index], language: language);
               },
             ),
           ),
@@ -465,11 +508,13 @@ class PostCard extends StatefulWidget {
   final int index;
   final String language;
   final String? captionOverride;
+  final CreatorProfile creator;
 
   const PostCard({
     super.key,
     required this.index,
     required this.language,
+    required this.creator,
     this.captionOverride,
   });
 
@@ -555,8 +600,7 @@ class _PostCardState extends State<PostCard> {
 
   @override
   Widget build(BuildContext context) {
-    final creator =
-        feedCreatorProfiles[widget.index % feedCreatorProfiles.length];
+    final creator = widget.creator;
     final mediaSlug = creatorMediaSlug(creator);
     final hasMedia = bundledCreatorSlugs.contains(mediaSlug);
     final mediaVariant = multiVariantCreatorSlugs.contains(mediaSlug)
@@ -598,7 +642,7 @@ class _PostCardState extends State<PostCard> {
               ],
             ),
             subtitle: Text(
-              '${creator.username} • ${feedLocations[widget.index % feedLocations.length]} • $_hoursAgo hours ago • ${widget.language}',
+              '${creator.username} • ${creatorLocations[creator.username] ?? 'Global'} • $_hoursAgo hours ago • ${widget.language}',
             ),
             trailing: IconButton(
               icon: const Icon(Icons.more_vert),
@@ -647,17 +691,15 @@ class _PostCardState extends State<PostCard> {
               style: const TextStyle(fontSize: 16),
             ),
           ),
-          ClipRect(
-            child: Container(
-              height: 250,
+          Container(
+            width: double.infinity,
+            color: Colors.grey[200],
+            child: Image.asset(
+              mediaAsset,
               width: double.infinity,
-              color: Colors.grey[200],
-              child: Image.asset(
-                mediaAsset,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                    const Center(child: Icon(Icons.broken_image, size: 64)),
-              ),
+              fit: BoxFit.fitWidth,
+              errorBuilder: (context, error, stackTrace) =>
+                  const SizedBox(height: 250, child: Center(child: Icon(Icons.broken_image, size: 64))),
             ),
           ),
           Padding(
@@ -901,6 +943,7 @@ class TrendPostsScreen extends StatelessWidget {
           return PostCard(
             index: indices[index] % feedCreatorProfiles.length,
             language: language,
+            creator: creator,
             captionOverride:
                 '${creator.name} shared a ${topic.toLowerCase()} update with the community.',
           );
@@ -1139,9 +1182,7 @@ class LiveStreamScreen extends StatelessWidget {
               child: Row(
                 children: [
                   const CircleAvatar(
-                    backgroundImage: NetworkImage(
-                      'https://via.placeholder.com/150',
-                    ),
+                    backgroundImage: AssetImage('assets/media/mrbeast/1.jpg'),
                   ),
                   const SizedBox(width: 8),
                   Column(

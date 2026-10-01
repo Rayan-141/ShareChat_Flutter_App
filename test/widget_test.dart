@@ -15,8 +15,8 @@ void main() {
     await tester.pumpWidget(const ShareChatCloneApp());
 
     expect(find.text('ShareChat'), findsOneWidget);
-    expect(find.text('Taylor Swift'), findsOneWidget);
-    expect(find.textContaining('@taylorswift'), findsOneWidget);
+    expect(find.byType(PostCard), findsWidgets);
+    expect(find.textContaining('@'), findsWidgets);
 
     await tester.tap(find.text('मराठी'));
     await tester.pump();
@@ -38,7 +38,7 @@ void main() {
   testWidgets('Profile identity can be edited', (WidgetTester tester) async {
     await tester.pumpWidget(const ShareChatCloneApp());
 
-    await tester.tap(find.byIcon(Icons.person).last);
+    await tester.tap(find.text('Profile').last);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Edit Profile'));
     await tester.pumpAndSettle();
