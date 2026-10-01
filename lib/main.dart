@@ -245,6 +245,13 @@ String creatorMediaSlug(CreatorProfile creator) {
   return creator.username.substring(1).replaceAll(RegExp(r'[^a-z0-9]+'), '_');
 }
 
+String creatorAssetPath(CreatorProfile creator) {
+  final slug = creatorMediaSlug(creator);
+  return bundledCreatorSlugs.contains(slug)
+      ? 'assets/media/$slug/1.jpg'
+      : 'assets/media/creator_placeholder.png';
+}
+
 final feedCreatorProfiles = creatorProfiles
     .where((creator) => bundledCreatorSlugs.contains(creatorMediaSlug(creator)))
     .toList(growable: false);
@@ -898,10 +905,7 @@ class TrendingScreen extends StatelessWidget {
     return ListTile(
       leading: CircleAvatar(
         backgroundColor: AppColors.secondary,
-        child: Text(
-          creator.name.substring(0, 1),
-          style: const TextStyle(color: Colors.white),
-        ),
+        backgroundImage: AssetImage(creatorAssetPath(creator)),
       ),
       title: Row(
         children: [
@@ -932,16 +936,48 @@ class TrendPostsScreen extends StatelessWidget {
     required this.language,
   });
 
-  static const topicIndices = <String, List<int>>{
-    'Mumbai': [0, 5, 10, 13, 20],
-    'Cricket': [1, 2, 6, 8, 9],
-    'Festival': [3, 7, 11, 14, 17],
-    'Food': [4, 12, 15, 18, 19],
+  static const topicCreators = <String, Set<String>>{
+    'Mumbai': {
+      '@virat.kohli',
+      '@priyankachopra',
+      '@iamsrk',
+      '@deepikapadukone',
+      '@aliaabhatt',
+    },
+    'Cricket': {
+      '@cristiano',
+      '@virat.kohli',
+      '@leomessi',
+      '@serenawilliams',
+      '@kingjames',
+      '@simonebiles',
+      '@k.mbappe',
+    },
+    'Festival': {
+      '@taylorswift',
+      '@shakira',
+      '@badgalriri',
+      '@dualipa',
+      '@iamsrk',
+    },
+    'Food': {
+      '@mrbeast',
+      '@therock',
+      '@selenagomez',
+      '@arianagrande',
+      '@gordongram',
+    },
   };
 
   @override
   Widget build(BuildContext context) {
-    final indices = topicIndices[topic] ?? topicIndices.values.first;
+    final usernames = topicCreators[topic] ?? topicCreators.values.first;
+    final indices = feedCreatorProfiles
+        .asMap()
+        .entries
+        .where((entry) => usernames.contains(entry.value.username))
+        .map((entry) => entry.key)
+        .toList();
     return Scaffold(
       appBar: AppBar(title: Text('#$topic posts')),
       body: ListView.builder(
@@ -1196,7 +1232,7 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
               _videoController.play();
             }
           });
-    _chatTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+    _chatTimer = Timer.periodic(const Duration(seconds: 2), (_) {
       final comment = autoComments[_nextComment % autoComments.length];
       _nextComment++;
       if (mounted) {
@@ -1286,8 +1322,8 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
               left: 16,
               child: Row(
                 children: [
-                  const CircleAvatar(
-                    backgroundImage: AssetImage('assets/media/mrbeast/1.jpg'),
+                  CircleAvatar(
+                    backgroundImage: AssetImage(creatorAssetPath(creator)),
                   ),
                   const SizedBox(width: 8),
                   Column(
