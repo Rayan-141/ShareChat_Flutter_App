@@ -1,5 +1,5 @@
 name: sharechat_clone
-description: "A new Flutter project."
+description: "An Indic language social sharing app built with Flutter."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -31,6 +31,7 @@ dependencies:
   flutter:
     sdk: flutter
   url_launcher: ^6.3.2
+  image_picker: ^1.2.3
   video_player: ^2.9.5
 
   # The following adds the Cupertino Icons font to your application.
@@ -62,6 +63,13 @@ flutter:
 
   assets:
     - assets/media/creator_placeholder.png
+    - assets/media/aarav_mehta.png
+    - assets/media/aarav_live_background.png
+    - assets/media/aarav_live_video.mp4
+    - assets/media/Ad1.png
+    - assets/media/Ad2.png
+    - assets/media/Ad3.png
+    - assets/media/Ad4.png
     - assets/media/viewer_avatar_1.png
     - assets/media/viewer_avatar_2.png
     - assets/media/viewer_avatar_3.png
@@ -87,9 +95,6 @@ flutter:
     - assets/media/leomessi/1.jpg
     - assets/media/leomessi/2.jpg
     - assets/media/leomessi/3.jpg
-    - assets/media/mrbeast/1.jpg
-    - assets/media/mrbeast/2.jpg
-    - assets/media/mrbeast/3.jpg
     - assets/media/priyankachopra/1.jpg
     - assets/media/priyankachopra/2.jpg
     - assets/media/priyankachopra/3.jpg

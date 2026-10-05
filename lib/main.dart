@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:video_player/video_player.dart';
 
 void main() {
@@ -26,12 +29,56 @@ class CreatorProfile {
   const CreatorProfile(this.name, this.username, {this.isVerified = true});
 }
 
+class UserPost {
+  final String caption;
+  final Uint8List? mediaBytes;
+  final String? mediaName;
+  final String? mediaPath;
+  final bool isVideo;
+  final DateTime createdAt;
+
+  const UserPost({
+    required this.caption,
+    this.mediaBytes,
+    this.mediaName,
+    this.mediaPath,
+    this.isVideo = false,
+    required this.createdAt,
+  });
+
+  UserPost copyWith({String? caption}) => UserPost(
+    caption: caption ?? this.caption,
+    mediaBytes: mediaBytes,
+    mediaName: mediaName,
+    mediaPath: mediaPath,
+    isVideo: isVideo,
+    createdAt: createdAt,
+  );
+}
+
+final ValueNotifier<List<UserPost>> createdPosts = ValueNotifier([]);
+
+class AppNotification {
+  final String title;
+  final String message;
+  final DateTime createdAt;
+
+  const AppNotification({
+    required this.title,
+    required this.message,
+    required this.createdAt,
+  });
+}
+
+final ValueNotifier<List<AppNotification>> appNotifications = ValueNotifier([]);
+final ValueNotifier<int> unreadNotificationCount = ValueNotifier(0);
+
 const creatorProfiles = <CreatorProfile>[
   CreatorProfile('Taylor Swift', '@taylorswift'),
   CreatorProfile('Cristiano Ronaldo', '@cristiano'),
   CreatorProfile('Virat Kohli', '@virat.kohli'),
   CreatorProfile('Selena Gomez', '@selenagomez'),
-  CreatorProfile('MrBeast', '@mrbeast'),
+  CreatorProfile('Aarav Mehta', '@aarav.mehta', isVerified: false),
   CreatorProfile('Priyanka Chopra Jonas', '@priyankachopra'),
   CreatorProfile('Lionel Messi', '@leomessi'),
   CreatorProfile('Zendaya', '@zendaya'),
@@ -74,7 +121,7 @@ const feedCaptions = <String>[
   'Studio days, late nights, and a melody that finally clicked.',
   'The work is quiet. The results will speak.',
   'A new personal best, and a lot more to chase.',
-  'Good food, good people, no plans to rush home.',
+  'Good music, good people, no plans to rush home.',
   'Somewhere between the first take and the last laugh.',
   'Small steps every day add up to something huge.',
   'Sunrise looked different from up here today.',
@@ -139,6 +186,180 @@ String localizedCaption(int index, String language) {
   return captions[index % captions.length];
 }
 
+String languageKey(String language) {
+  if (language.contains('Hindi')) return 'Hindi';
+  if (language.contains('Marathi')) return 'Marathi';
+  if (language.contains('Tamil')) return 'Tamil';
+  if (language.contains('Bengali')) return 'Bengali';
+  if (language.contains('Telugu')) return 'Telugu';
+  if (language.contains('Gujarati')) return 'Gujarati';
+  return 'English';
+}
+
+class TrendingTopic {
+  final String id;
+  final String postCount;
+  final Set<String> languages;
+  final Map<String, String> labels;
+
+  const TrendingTopic({
+    required this.id,
+    required this.postCount,
+    required this.languages,
+    required this.labels,
+  });
+
+  String labelFor(String language) =>
+      labels[languageKey(language)] ?? labels['English']!;
+}
+
+const trendingTopics = <TrendingTopic>[
+  TrendingTopic(
+    id: 'Mumbai',
+    postCount: '24.5K posts',
+    languages: {'English', 'Hindi', 'Gujarati'},
+    labels: {'English': '#Mumbai', 'Hindi': '#मुंबई', 'Gujarati': '#મુંબઈ'},
+  ),
+  TrendingTopic(
+    id: 'Cricket',
+    postCount: '18.2K posts',
+    languages: {
+      'English',
+      'Hindi',
+      'Marathi',
+      'Tamil',
+      'Bengali',
+      'Telugu',
+      'Gujarati',
+    },
+    labels: {
+      'English': '#Cricket',
+      'Hindi': '#क्रिकेट',
+      'Marathi': '#क्रिकेट',
+      'Tamil': '#கிரிக்கெட்',
+      'Bengali': '#ক্রিকেট',
+      'Telugu': '#క్రికెట్',
+      'Gujarati': '#ક્રિકેટ',
+    },
+  ),
+  TrendingTopic(
+    id: 'Festival',
+    postCount: '15.8K posts',
+    languages: {'English', 'Hindi', 'Marathi', 'Bengali', 'Telugu', 'Gujarati'},
+    labels: {
+      'English': '#Festival',
+      'Hindi': '#त्योहार',
+      'Marathi': '#सण',
+      'Bengali': '#উৎসব',
+      'Telugu': '#పండుగ',
+      'Gujarati': '#તહેવાર',
+    },
+  ),
+  TrendingTopic(
+    id: 'Music',
+    postCount: '11.4K posts',
+    languages: {
+      'English',
+      'Hindi',
+      'Marathi',
+      'Tamil',
+      'Bengali',
+      'Telugu',
+      'Gujarati',
+    },
+    labels: {
+      'English': '#Music',
+      'Hindi': '#संगीत',
+      'Marathi': '#संगीत',
+      'Tamil': '#இசை',
+      'Bengali': '#সঙ্গীত',
+      'Telugu': '#సంగీతం',
+      'Gujarati': '#સંગીત',
+    },
+  ),
+  TrendingTopic(
+    id: 'Football',
+    postCount: '10.6K posts',
+    languages: {
+      'English',
+      'Hindi',
+      'Marathi',
+      'Tamil',
+      'Bengali',
+      'Telugu',
+      'Gujarati',
+    },
+    labels: {
+      'English': '#Football',
+      'Hindi': '#फ़ुटबॉल',
+      'Marathi': '#फुटबॉल',
+      'Tamil': '#கால்பந்து',
+      'Bengali': '#ফুটবল',
+      'Telugu': '#ఫుట్‌బాల్',
+      'Gujarati': '#ફૂટબૉલ',
+    },
+  ),
+  TrendingTopic(
+    id: 'Bollywood',
+    postCount: '9.7K posts',
+    languages: {'Hindi'},
+    labels: {'Hindi': '#बॉलीवुड'},
+  ),
+  TrendingTopic(
+    id: 'Ganeshotsav',
+    postCount: '8.3K posts',
+    languages: {'Marathi'},
+    labels: {'Marathi': '#गणेशोत्सव'},
+  ),
+  TrendingTopic(
+    id: 'TamilCinema',
+    postCount: '7.9K posts',
+    languages: {'Tamil'},
+    labels: {'Tamil': '#தமிழ்சினிமா'},
+  ),
+  TrendingTopic(
+    id: 'DurgaPuja',
+    postCount: '7.2K posts',
+    languages: {'Bengali'},
+    labels: {'Bengali': '#দুর্গাপূজা'},
+  ),
+  TrendingTopic(
+    id: 'Sankranti',
+    postCount: '6.8K posts',
+    languages: {'Telugu'},
+    labels: {'Telugu': '#సంక్రాంతి'},
+  ),
+  TrendingTopic(
+    id: 'Uttarayan',
+    postCount: '5.9K posts',
+    languages: {'Gujarati'},
+    labels: {'Gujarati': '#ઉત્તરાયણ'},
+  ),
+];
+
+const trendingCreatorHandlesByLanguage = <String, List<String>>{
+  'English': ['@taylorswift', '@serenawilliams', '@cristiano'],
+  'Hindi': ['@iamsrk', '@virat.kohli', '@priyankachopra'],
+  'Marathi': ['@virat.kohli', '@iamsrk', '@aarav.mehta'],
+  'Tamil': ['@deepikapadukone', '@priyankachopra', '@lilly'],
+  'Bengali': ['@iamsrk', '@virat.kohli', '@aliaabhatt'],
+  'Telugu': ['@virat.kohli', '@priyankachopra', '@deepikapadukone'],
+  'Gujarati': ['@aarav.mehta', '@virat.kohli', '@iamsrk'],
+};
+
+const trendingCreatorFollowerCounts = <String, String>{
+  '@taylorswift': '285M followers',
+  '@serenawilliams': '18M followers',
+  '@cristiano': '680M followers',
+  '@iamsrk': '45M followers',
+  '@virat.kohli': '275M followers',
+  '@priyankachopra': '92M followers',
+  '@aarav.mehta': '12K followers',
+  '@deepikapadukone': '80M followers',
+  '@lilly': '14M followers',
+  '@aliaabhatt': '85M followers',
+};
+
 const feedLocations = <String>[
   'Mumbai',
   'New York',
@@ -158,7 +379,7 @@ const creatorLocations = <String, String>{
   '@cristiano': 'Funchal',
   '@virat.kohli': 'Mumbai',
   '@selenagomez': 'Los Angeles',
-  '@mrbeast': 'Greenville',
+  '@aarav.mehta': 'Pune',
   '@priyankachopra': 'Mumbai',
   '@leomessi': 'Rosario',
   '@zendaya': 'Los Angeles',
@@ -201,7 +422,6 @@ const bundledCreatorSlugs = <String>{
   'cristiano',
   'virat_kohli',
   'selenagomez',
-  'mrbeast',
   'priyankachopra',
   'leomessi',
   'zendaya',
@@ -232,7 +452,6 @@ const multiVariantCreatorSlugs = <String>{
   'cristiano',
   'virat_kohli',
   'selenagomez',
-  'mrbeast',
   'priyankachopra',
   'leomessi',
   'zendaya',
@@ -246,6 +465,9 @@ String creatorMediaSlug(CreatorProfile creator) {
 }
 
 String creatorAssetPath(CreatorProfile creator) {
+  if (creator.username == '@aarav.mehta') {
+    return 'assets/media/aarav_mehta.png';
+  }
   final slug = creatorMediaSlug(creator);
   return bundledCreatorSlugs.contains(slug)
       ? 'assets/media/$slug/1.jpg'
@@ -308,7 +530,51 @@ class MainNavigation extends StatefulWidget {
 
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
-  String _selectedLanguage = 'हिन्दी (Hindi)';
+  final Set<int> _visitedTabs = {0};
+  String _selectedLanguage = 'English';
+  Timer? _notificationTimer;
+  final Random _notificationRandom = Random();
+
+  static const _notificationExamples = <(String, String)>[
+    ('New like', 'Someone liked one of your posts.'),
+    ('New comment', 'Priya commented on a recent post.'),
+    ('Creator update', 'A creator you follow shared something new.'),
+    ('Community highlight', 'Your post is getting noticed by the community.'),
+    ('Live now', 'A creator is live. Join the conversation.'),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _scheduleRandomNotification();
+  }
+
+  void _scheduleRandomNotification() {
+    final seconds = 30 + _notificationRandom.nextInt(31);
+    _notificationTimer = Timer(Duration(seconds: seconds), () {
+      if (!mounted) return;
+      final example =
+          _notificationExamples[_notificationRandom.nextInt(
+            _notificationExamples.length,
+          )];
+      appNotifications.value = [
+        AppNotification(
+          title: example.$1,
+          message: example.$2,
+          createdAt: DateTime.now(),
+        ),
+        ...appNotifications.value,
+      ].take(100).toList();
+      unreadNotificationCount.value++;
+      _scheduleRandomNotification();
+    });
+  }
+
+  @override
+  void dispose() {
+    _notificationTimer?.cancel();
+    super.dispose();
+  }
 
   void _changeLanguage(String lang) {
     setState(() {
@@ -325,15 +591,29 @@ class _MainNavigationState extends State<MainNavigation> {
       ),
       TrendingScreen(language: _selectedLanguage),
       const CreatePostScreen(),
-      const LiveStreamScreen(),
+      LiveStreamScreen(isActive: _currentIndex == 3),
       const ProfileScreen(),
     ];
 
     return Scaffold(
-      body: screens[_currentIndex],
+      // Keep visited tabs mounted. Several tabs own asynchronous resources
+      // (media pickers, video controllers, and dialogs); tearing those trees
+      // down on every tab change can leave callbacks using deactivated context.
+      body: IndexedStack(
+        index: _currentIndex,
+        children: List<Widget>.generate(
+          screens.length,
+          (index) => _visitedTabs.contains(index)
+              ? screens[index]
+              : const SizedBox.shrink(),
+        ),
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
+        onTap: (index) => setState(() {
+          _currentIndex = index;
+          _visitedTabs.add(index);
+        }),
         type: BottomNavigationBarType.fixed,
         iconSize: 30,
         selectedFontSize: 16,
@@ -377,7 +657,52 @@ class HomeScreen extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.notifications), onPressed: () {}),
+          ValueListenableBuilder<int>(
+            valueListenable: unreadNotificationCount,
+            builder: (context, count, _) => IconButton(
+              tooltip: 'Notifications',
+              onPressed: () {
+                unreadNotificationCount.value = 0;
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const NotificationsScreen(),
+                  ),
+                );
+              },
+              icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(Icons.notifications),
+                  if (count > 0)
+                    Positioned(
+                      right: -8,
+                      top: -6,
+                      child: Container(
+                        constraints: const BoxConstraints(
+                          minWidth: 18,
+                          minHeight: 18,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          count > 99 ? '99+' : '$count',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.language),
             onPressed: () {
@@ -441,13 +766,35 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              itemCount: homeCreators.length,
-              itemBuilder: (context, index) {
-                return PostCard(
-                  index: index,
-                  creator: homeCreators[index],
-                  language: language,
+            child: ValueListenableBuilder<List<UserPost>>(
+              valueListenable: createdPosts,
+              builder: (context, posts, _) {
+                final contentCount = posts.length + homeCreators.length;
+                final adCount = contentCount ~/ 4;
+                return ListView.builder(
+                  itemCount: contentCount + adCount,
+                  itemBuilder: (context, index) {
+                    if ((index + 1) % 5 == 0 && index ~/ 5 < adCount) {
+                      return SponsoredAdCard(
+                        key: ValueKey('ad-$index'),
+                        adIndex: index ~/ 5,
+                      );
+                    }
+                    final contentIndex = index - index ~/ 5;
+                    if (contentIndex < posts.length) {
+                      return UserPostCard(
+                        key: ValueKey(posts[contentIndex]),
+                        post: posts[contentIndex],
+                      );
+                    }
+                    final creator = homeCreators[contentIndex - posts.length];
+                    return PostCard(
+                      key: ValueKey(creator.username),
+                      index: contentIndex - posts.length,
+                      creator: creator,
+                      language: language,
+                    );
+                  },
                 );
               },
             ),
@@ -526,6 +873,60 @@ class LanguageSelector extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class NotificationsScreen extends StatelessWidget {
+  const NotificationsScreen({super.key});
+
+  String _timeLabel(DateTime createdAt) {
+    final elapsed = DateTime.now().difference(createdAt);
+    if (elapsed.inMinutes < 1) return 'Just now';
+    if (elapsed.inHours < 1) return '${elapsed.inMinutes} min ago';
+    if (elapsed.inDays < 1) return '${elapsed.inHours} hr ago';
+    return '${elapsed.inDays} days ago';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Notifications')),
+      body: ValueListenableBuilder<List<AppNotification>>(
+        valueListenable: appNotifications,
+        builder: (context, notifications, _) {
+          if (notifications.isEmpty) {
+            return const Center(
+              child: Text('New notifications will appear here.'),
+            );
+          }
+          return ListView.separated(
+            itemCount: notifications.length,
+            separatorBuilder: (_, _) => const Divider(height: 1, indent: 72),
+            itemBuilder: (context, index) {
+              final notification = notifications[index];
+              return ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFFEDE5FF),
+                  child: Icon(
+                    Icons.notifications_active,
+                    color: AppColors.primary,
+                  ),
+                ),
+                title: Text(
+                  notification.title,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(notification.message),
+                trailing: Text(
+                  _timeLabel(notification.createdAt),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }
@@ -668,7 +1069,7 @@ class _PostCardState extends State<PostCard> {
               ],
             ),
             subtitle: Text(
-              '${creator.username} • ${creatorLocations[creator.username] ?? 'Global'} • $_hoursAgo hours ago • ${widget.language}',
+              '${creator.username} • ${creatorLocations[creator.username] ?? 'Global'} • $_hoursAgo hours ago',
             ),
             trailing: IconButton(
               icon: const Icon(Icons.more_vert),
@@ -832,6 +1233,13 @@ class TrendingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final selectedLanguage = languageKey(language);
+    final trendingCreators = creatorProfiles
+        .where(
+          (creator) => trendingCreatorHandlesByLanguage[selectedLanguage]!
+              .contains(creator.username),
+        )
+        .toList();
     return Scaffold(
       appBar: AppBar(title: const Text('Trending 🔥')),
       body: Column(
@@ -840,7 +1248,7 @@ class TrendingScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Text(
-              'Top Trends in $language',
+              'Top Trends',
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -851,10 +1259,11 @@ class TrendingScreen extends StatelessWidget {
           Expanded(
             child: ListView(
               children: [
-                _buildTrendItem(context, '#Mumbai', '24.5K posts'),
-                _buildTrendItem(context, '#Cricket', '18.2K posts'),
-                _buildTrendItem(context, '#Festival', '15.8K posts'),
-                _buildTrendItem(context, '#Food', '11.4K posts'),
+                ...trendingTopics
+                    .where(
+                      (topic) => topic.languages.contains(selectedLanguage),
+                    )
+                    .map((topic) => _buildTrendItem(context, topic)),
                 const Padding(
                   padding: EdgeInsets.all(16.0),
                   child: Text(
@@ -866,20 +1275,13 @@ class TrendingScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                _buildCreatorTile(
-                  context,
-                  creatorProfiles[0],
-                  '285M followers',
-                ),
-                _buildCreatorTile(
-                  context,
-                  creatorProfiles[1],
-                  '680M followers',
-                ),
-                _buildCreatorTile(
-                  context,
-                  creatorProfiles[2],
-                  '275M followers',
+                ...trendingCreators.map(
+                  (creator) => _buildCreatorTile(
+                    context,
+                    creator,
+                    trendingCreatorFollowerCounts[creator.username] ??
+                        'Trending creator',
+                  ),
                 ),
               ],
             ),
@@ -889,20 +1291,21 @@ class TrendingScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTrendItem(BuildContext context, String hashtag, String count) {
+  Widget _buildTrendItem(BuildContext context, TrendingTopic topic) {
     return ListTile(
       leading: const Icon(Icons.local_fire_department, color: Colors.orange),
-      title: Text(hashtag, style: const TextStyle(fontWeight: FontWeight.bold)),
-      subtitle: Text(count),
+      title: Text(
+        topic.labelFor(language),
+        style: const TextStyle(fontWeight: FontWeight.bold),
+      ),
+      subtitle: Text(topic.postCount),
       trailing: const Icon(Icons.chevron_right),
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => TrendPostsScreen(
-              topic: hashtag.substring(1),
-              language: language,
-            ),
+            builder: (_) =>
+                TrendPostsScreen(topic: topic.id, language: language),
           ),
         );
       },
@@ -956,15 +1359,9 @@ class TrendPostsScreen extends StatelessWidget {
       '@deepikapadukone',
       '@aliaabhatt',
     },
-    'Cricket': {
-      '@cristiano',
-      '@virat.kohli',
-      '@leomessi',
-      '@serenawilliams',
-      '@kingjames',
-      '@simonebiles',
-      '@k.mbappe',
-    },
+    // Keep sports topics scoped to athletes who play that sport.
+    'Cricket': {'@virat.kohli'},
+    'Football': {'@cristiano', '@leomessi', '@k.mbappe'},
     'Festival': {
       '@taylorswift',
       '@shakira',
@@ -972,18 +1369,37 @@ class TrendPostsScreen extends StatelessWidget {
       '@dualipa',
       '@iamsrk',
     },
-    'Food': {
-      '@mrbeast',
-      '@therock',
-      '@selenagomez',
+    'Music': {
+      '@taylorswift',
+      '@billieeilish',
       '@arianagrande',
-      '@gordongram',
+      '@teddysphotos',
+      '@shakira',
+      '@dualipa',
+      '@badgalriri',
+      '@bts.bighitofficial',
     },
+    'Bollywood': {
+      '@iamsrk',
+      '@priyankachopra',
+      '@aliaabhatt',
+      '@deepikapadukone',
+    },
+    'Ganeshotsav': {
+      '@virat.kohli',
+      '@iamsrk',
+      '@priyankachopra',
+      '@aliaabhatt',
+    },
+    'TamilCinema': {'@priyankachopra', '@deepikapadukone', '@aliaabhatt'},
+    'DurgaPuja': {'@iamsrk', '@priyankachopra', '@virat.kohli'},
+    'Sankranti': {'@virat.kohli', '@priyankachopra', '@deepikapadukone'},
+    'Uttarayan': {'@virat.kohli', '@aarav.mehta', '@priyankachopra'},
   };
 
   @override
   Widget build(BuildContext context) {
-    final usernames = topicCreators[topic] ?? topicCreators.values.first;
+    final usernames = topicCreators[topic] ?? const <String>{};
     final indices = feedCreatorProfiles
         .asMap()
         .entries
@@ -992,22 +1408,318 @@ class TrendPostsScreen extends StatelessWidget {
         .toList();
     return Scaffold(
       appBar: AppBar(title: Text('#$topic posts')),
-      body: ListView.builder(
-        itemCount: indices.length,
-        itemBuilder: (context, index) {
-          final creator =
-              feedCreatorProfiles[indices[index] % feedCreatorProfiles.length];
-          return PostCard(
-            index: indices[index] % feedCreatorProfiles.length,
-            language: language,
-            creator: creator,
-            captionOverride:
-                '${creator.name} shared a ${topic.toLowerCase()} update with the community.',
-          );
-        },
+      body: indices.isEmpty
+          ? Center(child: Text('No $topic posts yet.'))
+          : ListView.builder(
+              itemCount: indices.length,
+              itemBuilder: (context, index) {
+                final creator = feedCreatorProfiles[indices[index]];
+                return PostCard(
+                  index: indices[index],
+                  language: language,
+                  creator: creator,
+                  captionOverride:
+                      '${creator.name} shared a ${topic.toLowerCase()} update with the community.',
+                );
+              },
+            ),
+    );
+  }
+}
+
+class SponsoredAdCard extends StatelessWidget {
+  final int adIndex;
+
+  const SponsoredAdCard({super.key, required this.adIndex});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      color: const Color(0xFFF2F7FF),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.campaign, color: AppColors.primary),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Sponsored',
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Ad options',
+                  onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Ad preferences opened.')),
+                  ),
+                  icon: const Icon(Icons.more_horiz),
+                ),
+              ],
+            ),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.asset(
+                'assets/media/Ad${(adIndex % 4) + 1}.png',
+                width: double.infinity,
+                height: 260,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
+}
+
+class UserPostCard extends StatelessWidget {
+  final UserPost post;
+
+  const UserPostCard({super.key, required this.post});
+
+  Future<void> _handleOption(BuildContext context, String option) async {
+    if (option == 'edit') {
+      final controller = TextEditingController(text: post.caption);
+      final caption = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Edit post'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            maxLines: 4,
+            decoration: const InputDecoration(hintText: 'Write a caption'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(dialogContext, controller.text),
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      );
+      controller.dispose();
+      if (caption == null || !context.mounted) return;
+      if (caption.trim().isEmpty && post.mediaBytes == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('A text-only post needs a caption.')),
+        );
+        return;
+      }
+      final posts = List<UserPost>.of(createdPosts.value);
+      final index = posts.indexWhere((item) => identical(item, post));
+      if (index < 0) return;
+      posts[index] = post.copyWith(caption: caption.trim());
+      createdPosts.value = posts;
+      return;
+    }
+
+    if (option == 'delete') {
+      final shouldDelete = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Delete post?'),
+          content: const Text('This post will be removed from your feed.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Delete'),
+            ),
+          ],
+        ),
+      );
+      if (shouldDelete == true && context.mounted) {
+        createdPosts.value = createdPosts.value
+            .where((item) => !identical(item, post))
+            .toList();
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Post deleted.')));
+      }
+      return;
+    }
+
+    if (option == 'copy') {
+      await Clipboard.setData(ClipboardData(text: post.caption));
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Post text copied.')));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasMedia = post.mediaBytes != null;
+    return Card(
+      margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ListTile(
+            leading: const CircleAvatar(
+              backgroundColor: AppColors.primary,
+              child: Text('RR', style: TextStyle(color: Colors.white)),
+            ),
+            title: const Text(
+              'Rayan Rawat',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text('@Rayan_141 • ${_postTimeLabel(post.createdAt)}'),
+            trailing: PopupMenuButton<String>(
+              tooltip: 'Post options',
+              onSelected: (option) => _handleOption(context, option),
+              itemBuilder: (context) => const [
+                PopupMenuItem(
+                  value: 'edit',
+                  child: ListTile(
+                    dense: true,
+                    leading: Icon(Icons.edit_outlined),
+                    title: Text('Edit caption'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'copy',
+                  child: ListTile(
+                    dense: true,
+                    leading: Icon(Icons.copy),
+                    title: Text('Copy post text'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'delete',
+                  child: ListTile(
+                    dense: true,
+                    leading: Icon(Icons.delete_outline, color: Colors.red),
+                    title: Text('Delete post'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (post.caption.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Text(post.caption),
+            ),
+          if (hasMedia && post.isVideo && post.mediaPath != null)
+            VideoPostPlayer(path: post.mediaPath!, name: post.mediaName)
+          else if (hasMedia)
+            Image.memory(
+              post.mediaBytes!,
+              width: double.infinity,
+              height: 280,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => const SizedBox(
+                height: 120,
+                child: Center(child: Icon(Icons.broken_image_outlined)),
+              ),
+            ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+}
+
+class VideoPostPlayer extends StatefulWidget {
+  final String path;
+  final String? name;
+
+  const VideoPostPlayer({super.key, required this.path, this.name});
+
+  @override
+  State<VideoPostPlayer> createState() => _VideoPostPlayerState();
+}
+
+class _VideoPostPlayerState extends State<VideoPostPlayer> {
+  late final VideoPlayerController _controller;
+  bool _failed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final uri = kIsWeb ? Uri.parse(widget.path) : Uri.file(widget.path);
+    _controller = VideoPlayerController.networkUrl(uri)
+      ..initialize()
+          .then((_) {
+            if (mounted) {
+              _controller.setVolume(0);
+              setState(() {});
+            }
+          })
+          .catchError((_) {
+            if (mounted) setState(() => _failed = true);
+          });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_failed) {
+      return Container(
+        height: 220,
+        color: Colors.black87,
+        alignment: Alignment.center,
+        child: Text(
+          widget.name ?? 'Video could not be previewed',
+          style: const TextStyle(color: Colors.white),
+        ),
+      );
+    }
+    if (!_controller.value.isInitialized) {
+      return const SizedBox(
+        height: 220,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    return GestureDetector(
+      onTap: () => setState(() {
+        _controller.value.isPlaying ? _controller.pause() : _controller.play();
+      }),
+      child: AspectRatio(
+        aspectRatio: _controller.value.aspectRatio,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            VideoPlayer(_controller),
+            if (!_controller.value.isPlaying)
+              const Icon(Icons.play_circle_fill, color: Colors.white, size: 58),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _postTimeLabel(DateTime createdAt) {
+  final elapsed = DateTime.now().difference(createdAt);
+  if (elapsed.inMinutes < 1) return 'Just now';
+  if (elapsed.inHours < 1) return '${elapsed.inMinutes}m ago';
+  if (elapsed.inDays < 1) return '${elapsed.inHours}h ago';
+  return '${elapsed.inDays}d ago';
 }
 
 // --- Create Post & Video Upload ---
@@ -1020,7 +1732,80 @@ class CreatePostScreen extends StatefulWidget {
 
 class _CreatePostScreenState extends State<CreatePostScreen> {
   final TextEditingController _controller = TextEditingController();
-  bool _isLowDataMode = false;
+  Uint8List? _selectedMediaBytes;
+  String? _selectedMediaName;
+  String? _selectedMediaPath;
+  bool _selectedMediaIsVideo = false;
+  bool _isPickingMedia = false;
+  String _selectedLanguage = 'English';
+
+  Future<void> _pickMedia({required bool video}) async {
+    if (_isPickingMedia) return;
+    setState(() => _isPickingMedia = true);
+    try {
+      final picker = ImagePicker();
+      final media = video
+          ? await picker.pickVideo(source: ImageSource.gallery)
+          : await picker.pickImage(
+              source: ImageSource.gallery,
+              imageQuality: 90,
+            );
+      if (media == null || !mounted) return;
+      final bytes = await media.readAsBytes();
+      if (!mounted) return;
+      setState(() {
+        _selectedMediaBytes = bytes;
+        _selectedMediaName = media.name;
+        _selectedMediaPath = media.path;
+        _selectedMediaIsVideo = video;
+      });
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not select media: $error')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isPickingMedia = false);
+    }
+  }
+
+  void _publishPost() {
+    final caption = _controller.text.trim();
+    if (caption.isEmpty && _selectedMediaBytes == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Add text or choose an image or video.')),
+      );
+      return;
+    }
+    createdPosts.value = [
+      UserPost(
+        caption: caption,
+        mediaBytes: _selectedMediaBytes,
+        mediaName: _selectedMediaName,
+        mediaPath: _selectedMediaPath,
+        isVideo: _selectedMediaIsVideo,
+        createdAt: DateTime.now(),
+      ),
+      ...createdPosts.value,
+    ];
+    _controller.clear();
+    setState(() {
+      _selectedMediaBytes = null;
+      _selectedMediaName = null;
+      _selectedMediaPath = null;
+      _selectedMediaIsVideo = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Post published to your feed and profile.')),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   String transliterate(String text) {
     Map<String, String> words = {
@@ -1067,12 +1852,16 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 DropdownButton<String>(
-                  value: 'Hindi',
+                  value: _selectedLanguage,
                   items: const [
-                    DropdownMenuItem(value: 'Hindi', child: Text('हिन्दी')),
                     DropdownMenuItem(value: 'English', child: Text('English')),
+                    DropdownMenuItem(value: 'Hindi', child: Text('हिन्दी')),
                   ],
-                  onChanged: (v) {},
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => _selectedLanguage = value);
+                    }
+                  },
                 ),
                 ElevatedButton.icon(
                   onPressed: () {
@@ -1091,7 +1880,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             ),
             const Divider(height: 40),
             const Text(
-              'Media Upload (Tier-2/3 Optimized)',
+              'Add photos or videos',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
@@ -1099,90 +1888,93 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () {},
+                    onPressed: _isPickingMedia
+                        ? null
+                        : () => _pickMedia(video: false),
                     icon: const Icon(Icons.image),
-                    label: const Text('Image'),
+                    label: Text(
+                      _selectedMediaBytes != null && !_selectedMediaIsVideo
+                          ? 'Change image'
+                          : 'Image',
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () {
-                      showModalBottomSheet(
-                        context: context,
-                        builder: (ctx) => StatefulBuilder(
-                          builder:
-                              (
-                                BuildContext context,
-                                StateSetter setModalState,
-                              ) {
-                                return Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const ListTile(
-                                      title: Text(
-                                        'Video Compression',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                    ListTile(
-                                      leading: const Icon(Icons.high_quality),
-                                      title: const Text('High (40 MB)'),
-                                      onTap: () => Navigator.pop(ctx),
-                                    ),
-                                    ListTile(
-                                      leading: const Icon(Icons.sd),
-                                      title: const Text('Medium (20 MB)'),
-                                      onTap: () => Navigator.pop(ctx),
-                                    ),
-                                    ListTile(
-                                      leading: const Icon(
-                                        Icons.data_saver_on,
-                                        color: AppColors.success,
-                                      ),
-                                      title: const Text('Low (10 MB)'),
-                                      onTap: () => Navigator.pop(ctx),
-                                    ),
-                                    CheckboxListTile(
-                                      title: const Text('Low Data Mode'),
-                                      subtitle: const Text(
-                                        'Automatically compress for slow networks',
-                                      ),
-                                      value: _isLowDataMode,
-                                      onChanged: (val) {
-                                        setModalState(() {
-                                          _isLowDataMode = val!;
-                                        });
-                                        setState(() {
-                                          _isLowDataMode = val!;
-                                        });
-                                      },
-                                    ),
-                                  ],
-                                );
-                              },
-                        ),
-                      );
-                    },
+                    onPressed: _isPickingMedia
+                        ? null
+                        : () => _pickMedia(video: true),
                     icon: const Icon(Icons.video_call),
-                    label: const Text('Video'),
+                    label: Text(
+                      _selectedMediaBytes != null && _selectedMediaIsVideo
+                          ? 'Change video'
+                          : 'Video',
+                    ),
                   ),
                 ),
               ],
             ),
+            if (_isPickingMedia) ...[
+              const SizedBox(height: 16),
+              const LinearProgressIndicator(),
+            ],
+            if (_selectedMediaBytes != null) ...[
+              const SizedBox(height: 16),
+              Stack(
+                alignment: Alignment.topRight,
+                children: [
+                  if (_selectedMediaIsVideo)
+                    Container(
+                      height: 200,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.black87,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.play_circle_fill,
+                        size: 64,
+                        color: Colors.white,
+                      ),
+                    )
+                  else
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.memory(
+                        _selectedMediaBytes!,
+                        width: double.infinity,
+                        height: 240,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  IconButton.filled(
+                    onPressed: () => setState(() {
+                      _selectedMediaBytes = null;
+                      _selectedMediaName = null;
+                      _selectedMediaPath = null;
+                      _selectedMediaIsVideo = false;
+                    }),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              if (_selectedMediaName != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    _selectedMediaName!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+            ],
             const SizedBox(height: 40),
             SizedBox(
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Post published!')),
-                  );
-                  _controller.clear();
-                },
+                onPressed: _isPickingMedia ? null : _publishPost,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
@@ -1202,7 +1994,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
 // --- Live Stream Screen ---
 class LiveStreamScreen extends StatefulWidget {
-  const LiveStreamScreen({super.key});
+  final bool isActive;
+
+  const LiveStreamScreen({super.key, this.isActive = true});
 
   @override
   State<LiveStreamScreen> createState() => _LiveStreamScreenState();
@@ -1232,16 +2026,13 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
   void initState() {
     super.initState();
     _videoController =
-        VideoPlayerController.networkUrl(
-            Uri.parse(
-              'https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4',
-            ),
-          )
+        VideoPlayerController.asset('assets/media/aarav_live_video.mp4')
           ..setLooping(true)
           ..initialize().then((_) {
             if (mounted) {
+              _videoController.setVolume(0);
               setState(() {});
-              _videoController.play();
+              if (widget.isActive) _videoController.play();
             }
           });
     _chatTimer = Timer.periodic(const Duration(seconds: 2), (_) {
@@ -1253,6 +2044,20 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
         );
       }
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant LiveStreamScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isActive == widget.isActive ||
+        !_videoController.value.isInitialized) {
+      return;
+    }
+    if (widget.isActive) {
+      _videoController.play();
+    } else {
+      _videoController.pause();
+    }
   }
 
   @override
@@ -1307,27 +2112,34 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final creator = creatorProfiles[4];
+    final creator = creatorProfiles.firstWhere(
+      (profile) => profile.username == '@aarav.mehta',
+    );
     return Container(
       color: Colors.black,
       child: SafeArea(
         child: Stack(
           children: [
             Positioned.fill(
-              child: _videoController.value.isInitialized
-                  ? FittedBox(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.asset(
+                    'assets/media/aarav_live_background.png',
+                    fit: BoxFit.cover,
+                    alignment: Alignment.center,
+                  ),
+                  if (_videoController.value.isInitialized)
+                    FittedBox(
                       fit: BoxFit.cover,
                       child: SizedBox(
                         width: _videoController.value.size.width,
                         height: _videoController.value.size.height,
                         child: VideoPlayer(_videoController),
                       ),
-                    )
-                  : const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.secondary,
-                      ),
                     ),
+                ],
+              ),
             ),
             Positioned(
               top: 16,
@@ -1336,7 +2148,9 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
                 children: [
                   CircleAvatar(
                     radius: 30,
-                    backgroundImage: AssetImage(creatorAssetPath(creator)),
+                    backgroundImage: const AssetImage(
+                      'assets/media/aarav_mehta.png',
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Column(
@@ -1353,11 +2167,12 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
                             ),
                           ),
                           const SizedBox(width: 4),
-                          const Icon(
-                            Icons.verified,
-                            color: Colors.blue,
-                            size: 14,
-                          ),
+                          if (creator.isVerified)
+                            const Icon(
+                              Icons.verified,
+                              color: Colors.blue,
+                              size: 14,
+                            ),
                         ],
                       ),
                       Text(
@@ -1769,6 +2584,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
+            ValueListenableBuilder<List<UserPost>>(
+              valueListenable: createdPosts,
+              builder: (context, posts, _) => Padding(
+                padding: const EdgeInsets.fromLTRB(8, 16, 8, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Text(
+                        'Your posts (${posts.length})',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    if (posts.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: Text('Your published posts will appear here.'),
+                      )
+                    else
+                      ...posts.map(
+                        (post) => UserPostCard(key: ValueKey(post), post: post),
+                      ),
+                  ],
+                ),
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -1921,17 +2766,192 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
+class WithdrawalRequest {
+  final int amount;
+  final String bankName;
+  final String accountLastFour;
+  final DateTime createdAt;
+
+  const WithdrawalRequest({
+    required this.amount,
+    required this.bankName,
+    required this.accountLastFour,
+    required this.createdAt,
+  });
+}
+
 // --- Monetization Screen ---
-class MonetizationScreen extends StatelessWidget {
+class MonetizationScreen extends StatefulWidget {
   final int earnings;
 
   const MonetizationScreen({super.key, required this.earnings});
 
   @override
+  State<MonetizationScreen> createState() => _MonetizationScreenState();
+}
+
+class _MonetizationScreenState extends State<MonetizationScreen> {
+  late int _balance;
+  final List<WithdrawalRequest> _withdrawalRequests = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _balance = widget.earnings;
+  }
+
+  Future<void> _requestWithdrawal() async {
+    final formKey = GlobalKey<FormState>();
+    final holderController = TextEditingController();
+    final bankController = TextEditingController();
+    final accountController = TextEditingController();
+    final ifscController = TextEditingController();
+    final phoneController = TextEditingController();
+    final amountController = TextEditingController(text: '$_balance');
+
+    final submitted = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Bank details for withdrawal'),
+        content: SizedBox(
+          width: 420,
+          child: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: holderController,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: const InputDecoration(
+                      labelText: 'Account holder name',
+                    ),
+                    validator: (value) =>
+                        value == null || value.trim().length < 2
+                        ? 'Enter the account holder name'
+                        : null,
+                  ),
+                  TextFormField(
+                    controller: bankController,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: const InputDecoration(labelText: 'Bank name'),
+                    validator: (value) => value == null || value.trim().isEmpty
+                        ? 'Enter the bank name'
+                        : null,
+                  ),
+                  TextFormField(
+                    controller: accountController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Account number',
+                    ),
+                    validator: (value) =>
+                        value == null ||
+                            !RegExp(r'^\d{9,18}$').hasMatch(value.trim())
+                        ? 'Enter a 9–18 digit account number'
+                        : null,
+                  ),
+                  TextFormField(
+                    controller: ifscController,
+                    textCapitalization: TextCapitalization.characters,
+                    decoration: const InputDecoration(labelText: 'IFSC code'),
+                    validator: (value) =>
+                        value == null ||
+                            !RegExp(
+                              r'^[A-Z]{4}0[A-Z0-9]{6}$',
+                            ).hasMatch(value.trim().toUpperCase())
+                        ? 'Enter a valid IFSC code'
+                        : null,
+                  ),
+                  TextFormField(
+                    controller: phoneController,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(
+                      labelText: 'Registered phone number',
+                    ),
+                    validator: (value) =>
+                        value == null ||
+                            !RegExp(r'^\+?[0-9]{10,15}$').hasMatch(value.trim())
+                        ? 'Enter a valid phone number'
+                        : null,
+                  ),
+                  TextFormField(
+                    controller: amountController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Withdrawal amount (max ₹$_balance)',
+                    ),
+                    validator: (value) {
+                      final amount = int.tryParse(value?.trim() ?? '');
+                      if (amount == null || amount <= 0) {
+                        return 'Enter an amount greater than zero';
+                      }
+                      if (amount > _balance) {
+                        return 'Amount exceeds your balance';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (formKey.currentState?.validate() ?? false) {
+                Navigator.pop(dialogContext, true);
+              }
+            },
+            child: const Text('Submit request'),
+          ),
+        ],
+      ),
+    );
+
+    final amount = int.tryParse(amountController.text.trim()) ?? 0;
+    final bankName = bankController.text.trim();
+    final accountNumber = accountController.text.trim();
+    holderController.dispose();
+    bankController.dispose();
+    accountController.dispose();
+    ifscController.dispose();
+    phoneController.dispose();
+    amountController.dispose();
+
+    if (submitted != true || !mounted) return;
+    setState(() {
+      _balance -= amount;
+      _withdrawalRequests.insert(
+        0,
+        WithdrawalRequest(
+          amount: amount,
+          bankName: bankName,
+          accountLastFour: accountNumber.substring(accountNumber.length - 4),
+          createdAt: DateTime.now(),
+        ),
+      );
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Withdrawal request submitted. Transfer is simulated in this demo.',
+        ),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Monetization 💰')),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1948,7 +2968,7 @@ class MonetizationScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '₹$earnings',
+                      '₹$_balance',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 36,
@@ -1962,13 +2982,7 @@ class MonetizationScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 20),
                     ElevatedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Withdrawal Request Sent!'),
-                          ),
-                        );
-                      },
+                      onPressed: _balance > 0 ? _requestWithdrawal : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: AppColors.primary,
@@ -1979,6 +2993,28 @@ class MonetizationScreen extends StatelessWidget {
                 ),
               ),
             ),
+            if (_withdrawalRequests.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              const Text(
+                'Withdrawal requests',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+              const SizedBox(height: 8),
+              ..._withdrawalRequests.map(
+                (request) => Card(
+                  child: ListTile(
+                    leading: const Icon(
+                      Icons.account_balance,
+                      color: AppColors.primary,
+                    ),
+                    title: Text('₹${request.amount} • Pending'),
+                    subtitle: Text(
+                      '${request.bankName} • Account ending ${request.accountLastFour}',
+                    ),
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 24),
             const Text(
               'Revenue Breakdown',
