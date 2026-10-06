@@ -5,6 +5,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_compress/flutter_compress.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:video_player/video_player.dart';
 
@@ -1723,6 +1724,53 @@ String _postTimeLabel(DateTime createdAt) {
 }
 
 // --- Create Post & Video Upload ---
+enum VideoUploadQuality {
+  dataSaver,
+  balanced,
+  high,
+  original;
+
+  String get title => switch (this) {
+    VideoUploadQuality.dataSaver => 'Data saver',
+    VideoUploadQuality.balanced => 'Balanced',
+    VideoUploadQuality.high => 'High quality',
+    VideoUploadQuality.original => 'Original',
+  };
+
+  String get description => switch (this) {
+    VideoUploadQuality.dataSaver =>
+      'Smallest file · up to 480p · best for slow networks',
+    VideoUploadQuality.balanced => 'Clear video · up to 720p',
+    VideoUploadQuality.high => 'Sharper video · up to 1080p · larger file',
+    VideoUploadQuality.original => 'Keep the original file without compression',
+  };
+
+  VideoCompressConfig? get config => switch (this) {
+    VideoUploadQuality.dataSaver => const VideoCompressConfig(
+      qualityPercent: 35,
+      codec: VideoCodec.h264,
+      maxWidth: 480,
+      maxHeight: 854,
+      container: VideoContainer.mp4,
+    ),
+    VideoUploadQuality.balanced => const VideoCompressConfig(
+      qualityPercent: 60,
+      codec: VideoCodec.h264,
+      maxWidth: 720,
+      maxHeight: 1280,
+      container: VideoContainer.mp4,
+    ),
+    VideoUploadQuality.high => const VideoCompressConfig(
+      qualityPercent: 80,
+      codec: VideoCodec.h264,
+      maxWidth: 1080,
+      maxHeight: 1920,
+      container: VideoContainer.mp4,
+    ),
+    VideoUploadQuality.original => null,
+  };
+}
+
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
 
@@ -1735,14 +1783,64 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   Uint8List? _selectedMediaBytes;
   String? _selectedMediaName;
   String? _selectedMediaPath;
+  String? _selectedCompressionSummary;
   bool _selectedMediaIsVideo = false;
   bool _isPickingMedia = false;
+  double? _compressionProgress;
+  String? _mediaProgressLabel;
   String _selectedLanguage = 'English';
+
+  Future<VideoUploadQuality?> _chooseVideoQuality() {
+    return showModalBottomSheet<VideoUploadQuality>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 20, 20, 8),
+              child: Text(
+                'Video upload quality',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                'Choose how much data to use before selecting a video.',
+              ),
+            ),
+            for (final quality in VideoUploadQuality.values)
+              ListTile(
+                leading: Icon(switch (quality) {
+                  VideoUploadQuality.dataSaver => Icons.network_check,
+                  VideoUploadQuality.balanced => Icons.hd_outlined,
+                  VideoUploadQuality.high => Icons.high_quality_outlined,
+                  VideoUploadQuality.original => Icons.video_file_outlined,
+                }, color: AppColors.primary),
+                title: Text(quality.title),
+                subtitle: Text(quality.description),
+                onTap: () => Navigator.pop(context, quality),
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
 
   Future<void> _pickMedia({required bool video}) async {
     if (_isPickingMedia) return;
+    final quality = video ? await _chooseVideoQuality() : null;
+    if (video && quality == null) return;
+    if (!mounted) return;
     setState(() => _isPickingMedia = true);
     try {
+      setState(() {
+        _mediaProgressLabel = video ? 'Choose a video…' : 'Choose an image…';
+        _compressionProgress = null;
+      });
       final picker = ImagePicker();
       final media = video
           ? await picker.pickVideo(source: ImageSource.gallery)
@@ -1751,12 +1849,41 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               imageQuality: 90,
             );
       if (media == null || !mounted) return;
-      final bytes = await media.readAsBytes();
+
+      XFile preparedMedia = media;
+      String? compressionSummary;
+      if (video && quality != VideoUploadQuality.original) {
+        setState(() {
+          _mediaProgressLabel =
+              'Compressing for ${quality!.title.toLowerCase()}…';
+          _compressionProgress = 0;
+        });
+        final result = await FlutterCompress.instance.compress(
+          media.path,
+          quality!.config!,
+          onProgress: (progress) {
+            if (mounted) {
+              setState(() => _compressionProgress = progress.progress);
+            }
+          },
+        );
+        preparedMedia = XFile(result.outputPath);
+        compressionSummary = result.skipped
+            ? 'Already optimized · original kept'
+            : '${quality.title} · ${result.savedPercent.toStringAsFixed(0)}% smaller';
+      } else if (video) {
+        compressionSummary = 'Original quality · not compressed';
+      }
+
+      if (!mounted) return;
+      setState(() => _mediaProgressLabel = 'Preparing media…');
+      final bytes = await preparedMedia.readAsBytes();
       if (!mounted) return;
       setState(() {
         _selectedMediaBytes = bytes;
         _selectedMediaName = media.name;
-        _selectedMediaPath = media.path;
+        _selectedMediaPath = preparedMedia.path;
+        _selectedCompressionSummary = compressionSummary;
         _selectedMediaIsVideo = video;
       });
     } catch (error) {
@@ -1766,7 +1893,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         );
       }
     } finally {
-      if (mounted) setState(() => _isPickingMedia = false);
+      if (mounted) {
+        setState(() {
+          _isPickingMedia = false;
+          _compressionProgress = null;
+          _mediaProgressLabel = null;
+        });
+      }
     }
   }
 
@@ -1794,6 +1927,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       _selectedMediaBytes = null;
       _selectedMediaName = null;
       _selectedMediaPath = null;
+      _selectedCompressionSummary = null;
       _selectedMediaIsVideo = false;
     });
     ScaffoldMessenger.of(context).showSnackBar(
@@ -1917,7 +2051,16 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             ),
             if (_isPickingMedia) ...[
               const SizedBox(height: 16),
-              const LinearProgressIndicator(),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  LinearProgressIndicator(value: _compressionProgress),
+                  if (_mediaProgressLabel != null) ...[
+                    const SizedBox(height: 6),
+                    Text(_mediaProgressLabel!),
+                  ],
+                ],
+              ),
             ],
             if (_selectedMediaBytes != null) ...[
               const SizedBox(height: 16),
@@ -1953,6 +2096,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       _selectedMediaBytes = null;
                       _selectedMediaName = null;
                       _selectedMediaPath = null;
+                      _selectedCompressionSummary = null;
                       _selectedMediaIsVideo = false;
                     }),
                     icon: const Icon(Icons.close),
@@ -1966,6 +2110,17 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     _selectedMediaName!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              if (_selectedCompressionSummary != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    _selectedCompressionSummary!,
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
             ],
